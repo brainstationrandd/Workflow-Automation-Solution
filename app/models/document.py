@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
-class document(Base):
+class Document(Base):
     __tablename__ = 'document'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     path = Column(String(255), nullable=False)
