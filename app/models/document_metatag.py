@@ -7,5 +7,9 @@ class Document_metatag(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     document_id = Column(Integer, ForeignKey('document.id'), nullable=False)
     metatag_id = Column(Integer, ForeignKey('metatag.id'), nullable=False)
-    document = relationship('document', back_populates='document_metatag_collection')
-    metatag = relationship('metatag', back_populates='document_metatag_collection')
+    document = relationship('Document', back_populates='document_metatag')
+    metatag = relationship('Metatag', back_populates='document_metatag')
+
+
+from app.models.document import Document
+from app.models.metatag import Metatag

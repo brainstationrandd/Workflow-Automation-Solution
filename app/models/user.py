@@ -12,6 +12,9 @@ class User(Base):
     is_verified = Column(Boolean, nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
-    
-    report_collection = relationship('report', back_populates='user')
-    user_role_collection = relationship('user_role', back_populates='user')
+
+    report = relationship('Report', back_populates='user')
+    user_role = relationship('User_role', back_populates='user')
+
+from app.models.report import Report
+from app.models.user_role import User_role

@@ -8,4 +8,6 @@ class Report(Base):
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     query = Column(String(255), nullable=False)
     path = Column(String(255), nullable=False)
-    user = relationship('user', back_populates='report_collection')
+    user = relationship('User', back_populates='report')
+
+from app.models.user import User

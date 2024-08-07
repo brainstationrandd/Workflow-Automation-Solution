@@ -10,4 +10,7 @@ class Document(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     summary = Column(String(255), nullable=True)
     category = Column(String(255), nullable=True)
-    document_metatag_collection = relationship('document_metatag', back_populates='document')
+    document_metatag = relationship('Document_metatag', back_populates='document')
+
+
+from app.models.document_metatag import Document_metatag
