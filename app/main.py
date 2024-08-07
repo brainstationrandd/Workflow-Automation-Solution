@@ -13,9 +13,11 @@ from fastapi.exceptions import RequestValidationError
 from app.helpers.custom_exception_handler import validation_exception_handler
 from fastapi.staticfiles import StaticFiles
 
+
 app = FastAPI()
 
-# from app.endpoints import user_controller
+from app.endpoints import user_controller
+from app.endpoints import admin_controller
 
 sessions = {}
 
@@ -28,8 +30,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.include_router(user_controller.router, prefix="/api/user", tags=["User"])
 import os
+
+
+app.include_router(user_controller.router, prefix="/api/user", tags=["User"])
+app.include_router(admin_controller.router, prefix="/api/admin", tags=["Admin"])
+
+
+
+
+
+app.add_exception_handler(HTTPException, http_error_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 #Health Checker
