@@ -4,7 +4,7 @@ from app.models.admin import Admin
 from utils.logger import logger
 from app.db import SessionLocal
 from app.helpers.hash_password import hash_password
-
+from app.schema.admin import AdminBase
 
 class AdminRepository:
     @staticmethod
@@ -81,8 +81,6 @@ class AdminRepository:
                 raise HTTPException(404, "Admin not found")
             if(admin.name):
                 db_admin.name = admin.name
-            if(admin.phone):
-                db_admin.phone = admin.phone
             if(admin.email):
                 db_admin.email = admin.email
             if(admin.avatar):
