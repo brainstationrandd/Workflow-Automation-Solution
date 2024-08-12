@@ -10,3 +10,6 @@ __pycache__
 alembic
 alembic.ini
 test*
+*.pdf
+swe-labels-subcat.csv
+*.csv
