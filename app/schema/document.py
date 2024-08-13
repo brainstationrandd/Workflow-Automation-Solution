@@ -10,11 +10,13 @@ class DocumentBase(BaseModel):
     updated_at: datetime
     summary: str
     category: str
+    classification_status: str = 'NOT STARTED'
 
 class UpdateDocument(BaseModel):
     path: optional[str] = None
     summary: optional[str] = None
     category: optional[str] = None
+    classification_status: optional[str] = None
 
 class DocumentResponseBase(UpdateDocument):
     id: int
@@ -25,3 +27,7 @@ class DocumentResponse(BaseModel):
     status_code: int
     message: str
     data: DocumentResponseBase
+
+class DocumentInit(BaseModel):
+    path: str
+    classification_status: str = 'NOT STARTED'

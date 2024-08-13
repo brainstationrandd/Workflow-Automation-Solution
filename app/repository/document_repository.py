@@ -3,17 +3,18 @@ from requests import Session
 from utils.logger import logger
 from app.db import engine, SessionLocal, Base, get_db
 from app.models.document import Document
+from app.schema.document import *
 
 
 class DocumentRepository:
     @staticmethod
-    async def get_doc_by_id(document_id):
+    async def get_doc_by_id(document_id: int):
         db = SessionLocal()
         try:
-            user = db.query(Document).filter(Document.id == document_id).first()
-            if not user:
+            doc = db.query(Document).filter(Document.id == document_id).first()
+            if not doc:
                 raise HTTPException(status_code=404, detail="User not found")
-            return user
+            return doc
         except HTTPException as e:
             logger.info(f'An HTTP error occurred: \n {str(e)}')
             raise e
@@ -22,3 +23,43 @@ class DocumentRepository:
             raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
         
     
+    @staticmethod
+    def update_doc_status(document_id: int,document: UpdateDocument):
+        db = SessionLocal()
+        try:
+            doc = db.query(Document).filter(Document.id == document_id).first()
+            if doc:
+                doc.classification_status = document.classification_status
+                doc.category = document.category
+                db.commit()
+                db.refresh(doc)
+            return doc
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        except Exception as e:
+            logger.info(f'An error occurred: \n {str(e)}')
+            raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        
+    @staticmethod
+    def add_file(document: DocumentBase):
+        db = SessionLocal()
+        try:
+            db_file = Document(
+                path = document.path,
+                created_at = document.created_at,
+                updated_at = document.updated_at,
+                summary = document.summary,
+                category = document.category,
+                classification_status = document.classification_status
+            )
+            db.add(db_file)
+            db.commit()
+            db.refresh(db_file)
+            return db_file
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        except Exception as e:
+            logger.info(f'An error occurred: \n {str(e)}')
+            raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
