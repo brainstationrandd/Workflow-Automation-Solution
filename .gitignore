@@ -13,3 +13,4 @@ test*
 *.pdf
 swe-labels-subcat.csv
 *.csv
+*.tar.gz
