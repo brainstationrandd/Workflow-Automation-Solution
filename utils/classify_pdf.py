@@ -53,7 +53,7 @@ def get_classification_job_status(job_id):
     return response['DocumentClassificationJobProperties']['JobStatus']
 
 def print_class(location):
-    location = os.path.join(location, "s3_output.tar.gz")
+    # location = os.path.join(location, "s3_output.tar.gz")
     with tarfile.open(location, 'r:gz') as tar:
         # Loop through the files in the tar archive
         for member in tar.getmembers():
@@ -75,7 +75,7 @@ def download_classification_results(s3_output_uri, job_id, local_output_path):
     # s3_bucket, s3_key = s3_output_uri.replace("s3://", "").split("/", 1)
     # s3_key = f"{s3_key}/{os.path.basename(local_output_path)}"
     # s3.download_file(s3_bucket, s3_key, local_output_path)
-    local_output_path = os.path.join(local_output_path, "s3_output.tar.gz")
+    # local_output_path = os.path.join(local_output_path, "s3_output.tar.gz")
     # os.makedirs(local_output_path, exist_ok=True)
     s3.download_file(s3_output_uri,f"output/{account_id}-CLN-{job_id}/output/output.tar.gz",local_output_path)
 

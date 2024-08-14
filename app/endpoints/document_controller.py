@@ -32,7 +32,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
     save_directory = "data/uploaded_pdfs"
     os.makedirs(save_directory, exist_ok=True)
     try:
-        tasks = []
+        docs_w_metadata = []
         for file in files:
             file_path = os.path.join(save_directory, f"{uuid.uuid4()}.pdf")
             async with aiofiles.open(file_path, 'wb') as out_file:
@@ -50,6 +50,17 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
             
             db_file = DocumentRepository.add_file(doc)
 
+            doc_w_metadata = DocumentWithMetadata(
+                document_id = db_file.id,
+                bucket_name = l1_bucket_name,
+                model_arn = l1_model_arn,
+                document = doc,
+                local_output_path = f"data/s3_output_zips/{uuid.uuid4()}",
+                job_id = ''
+            )
+
+            docs_w_metadata.append(doc_w_metadata)
+
             # task = asyncio.create_task(
             #             partial( classify_pdf,
             #                             bucket_name = l1_bucket_name,
@@ -59,14 +70,15 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
                                     
             #                     ))()
             # tasks.append(task)
-            background_tasks.add_task(classify_pdf,
-                                    document_id = db_file.id,
-                                    bucket_name = l1_bucket_name,
-                                    model_arn = l1_model_arn,
-                                    document = doc,
-                                    local_output_path = os.path.join("data/s3_output_zips",f"{uuid.uuid4()}")
+            # background_tasks.add_task(classify_pdf,
+            #                         document_id = db_file.id,
+            #                         bucket_name = l1_bucket_name,
+            #                         model_arn = l1_model_arn,
+            #                         document = doc,
+            #                         local_output_path = os.path.join("data/s3_output_zips",f"{uuid.uuid4()}")
                                     
-                                    )
+            #                         )
+        background_tasks.add_task(classify_pdf, docs_w_metadata = docs_w_metadata)
         # background_tasks.add_task(asyncio.gather(*tasks))
         # await asyncio.gather(*tasks)
         logger.info("PDF files uploaded successfully and classification started.")

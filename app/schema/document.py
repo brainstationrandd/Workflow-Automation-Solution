@@ -31,3 +31,11 @@ class DocumentResponse(BaseModel):
 class DocumentInit(BaseModel):
     path: str
     classification_status: str = 'NOT STARTED'
+
+class DocumentWithMetadata(BaseModel):
+    document_id: int
+    bucket_name: str
+    model_arn: str
+    local_output_path: str
+    document: DocumentBase
+    job_id: str
