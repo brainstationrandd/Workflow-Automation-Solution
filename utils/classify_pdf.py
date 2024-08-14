@@ -66,6 +66,25 @@ def print_class(location):
                     json_data = json.loads(line.decode('utf-8'))
                     print(json_data['Classes'][0])
                     return str(json_data['Classes'][0]['Name'])
+                
+def print_sub_class(location, threshold = 0.35):
+    # location = os.path.join(location, "s3_output.tar.gz")
+    with tarfile.open(location, 'r:gz') as tar:
+        # Loop through the files in the tar archive
+        for member in tar.getmembers():
+            # Check if the file is a .jsonl file
+            if member.isfile() and member.name.endswith('.jsonl'):
+                # Extract the file
+                f = tar.extractfile(member)
+                # Read and decode lines from the file
+                for line in f:
+                    json_data = json.loads(line.decode('utf-8'))
+                    print(json_data['Labels'][0])
+                    ans=""
+                    for label in json_data['Labels']:
+                        name = label["Name"]
+                        if label["Score"] >= threshold : ans = f"{ans}|{name}"
+                    return str(ans[1:])
 
 # print_class('result.tar.gz')
 

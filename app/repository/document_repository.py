@@ -29,8 +29,12 @@ class DocumentRepository:
         try:
             doc = db.query(Document).filter(Document.id == document_id).first()
             if doc:
-                doc.classification_status = document.classification_status
-                doc.category = document.category
+                if document.classification_status:
+                    doc.classification_status = document.classification_status
+                if document.category:
+                    doc.category = document.category
+                if document.sub_category:
+                    doc.sub_category = document.sub_category
                 db.commit()
                 db.refresh(doc)
             return doc
@@ -51,6 +55,7 @@ class DocumentRepository:
                 updated_at = document.updated_at,
                 summary = document.summary,
                 category = document.category,
+                sub_category = document.category,
                 classification_status = document.classification_status
             )
             db.add(db_file)

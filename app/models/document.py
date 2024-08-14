@@ -10,6 +10,7 @@ class Document(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     summary = Column(String(255), nullable=True)
     category = Column(String(255), nullable=True)
+    sub_category = Column(String(255), nullable=True)
     classification_status = Column(Enum('NOT STARTED', 'IN PROGRESS', 'DONE', 'COMPLETED', 'FAILED', name='status'), default='NOT STARTED', nullable=True)
     document_metatag = relationship('Document_metatag', back_populates='document')
 
