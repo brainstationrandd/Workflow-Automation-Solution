@@ -9,3 +9,8 @@ __pycache__
 .idea
 alembic
 alembic.ini
+test*
+*.pdf
+swe-labels-subcat.csv
+*.csv
+*.tar.gz
