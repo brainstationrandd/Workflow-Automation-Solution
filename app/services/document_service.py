@@ -21,11 +21,16 @@ async def classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
     """Extract text from a PDF, upload it to S3, and classify it using Amazon Comprehend."""
     job_id_flags={}
     for doc_w_metadata in docs_w_metadata:
+        # Extract Text
         text = extract_text_from_pdf(doc_w_metadata.document.path)
+
+        #Upload to S3
         s3_input_key = f'input/{doc_w_metadata.document.path[:-3]}/input.txt'
         upload_to_s3(text, doc_w_metadata.bucket_name, s3_input_key)
         s3_input_uri = f's3://{doc_w_metadata.bucket_name}/{s3_input_key}'
         s3_output_uri = f's3://{doc_w_metadata.bucket_name}/output/'
+        
+        # Send to document to classify
         job_id_x = start_classification_job(s3_input_uri, s3_output_uri, doc_w_metadata.model_arn)
         doc_w_metadata.job_id = job_id_x
         job_id_flags[job_id_x] = 0
@@ -37,23 +42,28 @@ async def classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
         for doc_w_metadata in docs_w_metadata:
             if job_id_flags[doc_w_metadata.job_id] : continue
             status = get_classification_job_status(doc_w_metadata.job_id)
+            #wait till classification is complete
             if status in ['COMPLETED', 'FAILED']:
                 job_id_flags[doc_w_metadata.job_id] = 1
                 jobs_in_q -= 1
                 if status == 'COMPLETED':
                     local_output_path = f"{doc_w_metadata.local_output_path}-{doc_w_metadata.job_id}.tar.gz"
-
+                    
+                    #doenload classification data
                     download_classification_results(doc_w_metadata.bucket_name, doc_w_metadata.job_id, local_output_path)
                     logger.info(f"{doc_w_metadata.job_id} tar.gz downloaded")
                     
                     predicted_category = print_class(local_output_path)
                     doc_w_metadata.document.category = predicted_category
                     logger.info(f"class({doc_w_metadata.job_id}) = {predicted_category}")
+                    
+                    #update db according to category
                     update_data = UpdateDocument(classification_status=status, category=predicted_category)
 
                     DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
                     logger.info(f"{doc_w_metadata.job_id}: db updated")
 
+                    #store CVs of Software Engineers
                     if predicted_category == "SOFTWARE-ENGINEER":
                         sub_doc_w_metadata = DocumentWithMetadata(
                             document_id = doc_w_metadata.document_id,
@@ -65,7 +75,7 @@ async def classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
                         )
                         sub_docs_w_metadata.append(sub_doc_w_metadata)
                 else:
-                    update_data = UpdateDocument(classification_status=status, category = "jani na")
+                    update_data = UpdateDocument(classification_status=status, category = "")
                     DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
                     logger.info(f"{doc_w_metadata.job_id}: Classification Failed")
                     raise Exception("Classification job failed")
@@ -80,6 +90,8 @@ async def classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
 
 def sub_classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
     job_id_flags={}
+
+    #upload to s3 and start sub_classification job
     for doc_w_metadata in docs_w_metadata:
         text = extract_text_from_pdf(doc_w_metadata.document.path)
         s3_input_key = f'input/{doc_w_metadata.document.path[:-3]}/input.txt'
@@ -96,6 +108,8 @@ def sub_classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
         for doc_w_metadata in docs_w_metadata:
             if job_id_flags[doc_w_metadata.job_id] : continue
             status = get_classification_job_status(doc_w_metadata.job_id)
+
+            #wait for classification job to be done
             if status in ['COMPLETED', 'FAILED']:
                 job_id_flags[doc_w_metadata.job_id] = 1
                 jobs_in_q -= 1
@@ -110,11 +124,12 @@ def sub_classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
                     logger.info(f"class({doc_w_metadata.job_id}) = {predicted_category}")
                     update_data = UpdateDocument(classification_status=status, sub_category=predicted_category)
 
+                    #Update db for subclassification
                     DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
                     logger.info(f"{doc_w_metadata.job_id}: db updated")
 
                 else:
-                    update_data = UpdateDocument(classification_status=status, sub_category = "jani na. classify hoy nai")
+                    update_data = UpdateDocument(classification_status=status, sub_category = "")
                     DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
                     logger.info(f"{doc_w_metadata.job_id}: Classification Failed")
                     raise Exception("Classification job failed")
