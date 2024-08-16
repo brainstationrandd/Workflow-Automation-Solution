@@ -1,13 +1,8 @@
 from dotenv import dotenv_values
 import boto3
 from langchain_aws import ChatBedrock
+from app.config import *
 
-
-config = dotenv_values(".env")
-openai_api_key=config['OPENAI_API_KEY'] 
-key=config['key']
-secret=config['secret']
-session_token=config['session_token']
 
 session = boto3.session.Session(
     aws_access_key_id=key,
