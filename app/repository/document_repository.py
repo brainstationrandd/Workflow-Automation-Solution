@@ -13,7 +13,7 @@ class DocumentRepository:
         try:
             doc = db.query(Document).filter(Document.id == document_id).first()
             if not doc:
-                raise HTTPException(status_code=404, detail="User not found")
+                raise HTTPException(status_code=404, detail="Document not found")
             return doc
         except HTTPException as e:
             logger.info(f'An HTTP error occurred: \n {str(e)}')

@@ -5,9 +5,9 @@ from app.db import engine, SessionLocal, Base, get_db
 from app.models.report import Report
 
 
-class DocumentRepository:
+class ReportRepository:
     @staticmethod
-    async def get_doc_by_id(report_id):
+    async def get_report_by_id(report_id):
         db = SessionLocal()
         try:
             user = db.query(Report).filter(Report.id == report_id).first()

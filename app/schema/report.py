@@ -4,5 +4,5 @@ from typing import Optional as optional
 from typing import List
 
 
-class ReportBase(BaseModel):
+# class ReportBase(BaseModel):
     

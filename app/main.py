@@ -19,7 +19,7 @@ app = FastAPI()
 from app.endpoints import user_controller
 from app.endpoints import admin_controller
 from app.endpoints import document_controller
-
+from app.endpoints import role_controller
 sessions = {}
 
 origins = ["*"]
@@ -37,6 +37,7 @@ import os
 app.include_router(user_controller.router, prefix="/api/user", tags=["User"])
 app.include_router(admin_controller.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(document_controller.router, prefix="/api/document", tags=["Document"])
+app.include_router(role_controller.router, prefix="/api/role", tags=["Role"])
 
 
 
