@@ -39,5 +39,6 @@ class DocumentWithMetadata(BaseModel):
     bucket_name: str
     model_arn: str
     local_output_path: str
+    file_name: str
     document: DocumentBase
     job_id: str

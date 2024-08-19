@@ -35,6 +35,8 @@ class DocumentRepository:
                     doc.category = document.category
                 if document.sub_category:
                     doc.sub_category = document.sub_category
+                if document.path:
+                    doc.path = document.path
                 db.commit()
                 db.refresh(doc)
             return doc

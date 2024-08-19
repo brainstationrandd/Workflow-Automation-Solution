@@ -8,7 +8,7 @@ import aiofiles
 import uuid
 from app.repository.document_repository import DocumentRepository
 from datetime import datetime
-from app.config import l1_model_arn, l1_bucket_name
+from app.config import l1_model_arn, l1_bucket_name, local_pdf_directory
 import asyncio
 from functools import partial
 router = APIRouter()
@@ -29,15 +29,16 @@ async def get_doc_by_id(document_id: int):
 
 @router.post("/upload-pdfs/")
 async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...), db: Session = Depends(get_db) ):
-    save_directory = "data/uploaded_pdfs"
-    os.makedirs(save_directory, exist_ok=True)
+    # save_directory = "data/uploaded_pdfs"
+    os.makedirs(local_pdf_directory, exist_ok=True)
     try:
         docs_w_metadata = []
         for file in files:
             original_filename = file.filename
             name, ext = os.path.splitext(original_filename)
             # file_path = os.path.join(save_directory, f"{uuid.uuid4()}.pdf")
-            file_path = os.path.join(save_directory, f"{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}")
+            file_name = f"{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}"
+            file_path = os.path.join(local_pdf_directory, file_name)
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()
                 await out_file.write(content)
@@ -59,6 +60,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
                 bucket_name = l1_bucket_name,
                 model_arn = l1_model_arn,
                 document = doc,
+                file_name = file_name,
                 local_output_path = f"data/s3_output_zips/{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}",
                 job_id = ''
             )

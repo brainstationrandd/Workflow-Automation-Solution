@@ -6,6 +6,7 @@ import os
 import time
 from app.config import *
 from utils.llms import session
+from app.schema.document import *
 
 
 def extract_text_from_pdf(pdf_path):
@@ -87,3 +88,22 @@ def download_classification_results(s3_output_uri, job_id, local_output_path):
     """Download classification results from S3."""
     s3 = session.client('s3')
     s3.download_file(s3_output_uri,f"output/{account_id}-CLN-{job_id}/output/output.tar.gz",local_output_path)
+
+
+def create_jobs(docs_w_metadata:  List[DocumentWithMetadata]):
+    job_id_flags={}
+    for doc_w_metadata in docs_w_metadata:
+        # Extract Text
+        text = extract_text_from_pdf(doc_w_metadata.document.path)
+
+        #Upload to S3
+        s3_input_key = f'input/{doc_w_metadata.document.path[:-3]}/input.txt'
+        upload_to_s3(text, doc_w_metadata.bucket_name, s3_input_key)
+        s3_input_uri = f's3://{doc_w_metadata.bucket_name}/{s3_input_key}'
+        s3_output_uri = f's3://{doc_w_metadata.bucket_name}/output/'
+        
+        # Send to document to classify
+        job_id_x = start_classification_job(s3_input_uri, s3_output_uri, doc_w_metadata.model_arn)
+        doc_w_metadata.job_id = job_id_x
+        job_id_flags[job_id_x] = 0
+    return job_id_flags
