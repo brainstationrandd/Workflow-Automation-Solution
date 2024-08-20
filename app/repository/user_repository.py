@@ -110,3 +110,16 @@ class UserRepository:
             raise e
         finally:
             db.close()
+    
+    
+    @staticmethod
+    async def get_email_by_id(user_id: int):
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            return user.email
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        finally:
+            db.close()

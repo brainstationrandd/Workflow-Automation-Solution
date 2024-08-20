@@ -64,7 +64,7 @@ def print_class(location):
                 
 
                 
-def print_sub_class(location, threshold = 0.35):
+def print_sub_class(location, threshold = sub_category_threshold):
     # location = os.path.join(location, "s3_output.tar.gz")
     with tarfile.open(location, 'r:gz') as tar:
         # Loop through the files in the tar archive

@@ -11,3 +11,4 @@ account_id = config['account_id']
 l2_model_arn = config['l2_model_arn']
 l2_bucket_name = config['l2_bucket_name']
 local_pdf_directory = "data/uploaded_pdfs"
+sub_category_threshold = 0.3
