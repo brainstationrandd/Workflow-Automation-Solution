@@ -8,6 +8,6 @@ class Job(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     name = Column(String(255), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
-    description = Column(String(65535), nullable=False)
+    description = Column(String(65535), nullable=True)
 
 from app.models.user import User

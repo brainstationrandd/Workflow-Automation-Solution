@@ -5,7 +5,7 @@ from typing import List
 
 
 class ReportBase(BaseModel):
-    user_it: int
+    user_id: int
     query: int
 
 class UpdateReport(ReportBase):
