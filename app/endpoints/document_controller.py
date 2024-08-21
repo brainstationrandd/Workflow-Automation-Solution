@@ -98,4 +98,12 @@ async def sns_endpoint(request: Request):
         logger.info(f"Received SNS message: {message}")
         print(f"Received SNS message: {message}")
 
+    print(data)
+    logger.info(f"Entire Received SNS message: {data}")
+
     return {"status": "success"}
+
+
+
+# https://b50d-103-95-99-146.ngrok-free.app/api/document/sns-endpoint/
+# arn:aws:sns:us-east-1:905418236735:classification

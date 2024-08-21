@@ -37,7 +37,7 @@ def start_classification_job(s3_input_uri, s3_output_uri, model_arn):
         DataAccessRoleArn=comprehendAITeam,  # IAM Role with necessary permissions
         DocumentClassifierArn=model_arn,
         # JobCompletionNotificationChannel={
-            
+        #     'SNSTopicArn' :'arn:aws:sns:us-east-1:905418236735:classification:2409f6de-7040-48ae-9f8c-fdc5bbf6f9b7'
         # }
     )
     return response['JobId']
