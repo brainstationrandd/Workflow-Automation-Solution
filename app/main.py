@@ -22,6 +22,7 @@ from app.endpoints import document_controller
 from app.endpoints import role_controller
 from app.endpoints import user_role_controller
 from app.endpoints import job_controller
+from app.endpoints import elastic_search_controller
 sessions = {}
 
 origins = ["*"]
@@ -42,7 +43,7 @@ app.include_router(document_controller.router, prefix="/api/document", tags=["Do
 app.include_router(role_controller.router, prefix="/api/role", tags=["Role"])
 app.include_router(user_role_controller.router, prefix="/api/user_role", tags=["UserRole"])
 app.include_router(job_controller.router, prefix="/api/job", tags=["Job"])
-
+app.include_router(elastic_search_controller.router, prefix="/api/elastic_search", tags=["ElasticSearch"])
 
 
 
