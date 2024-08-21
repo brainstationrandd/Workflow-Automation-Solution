@@ -95,6 +95,7 @@ async def sns_endpoint(request: Request):
     if "Message" in data:
         message = data["Message"]
         # Process the message, e.g., log it or trigger another action
+        logger.info(f"Received SNS message: {message}")
         print(f"Received SNS message: {message}")
 
     return {"status": "success"}
