@@ -1,8 +1,5 @@
 from http.client import HTTPException
-from fastapi import HTTPException as FastAPIHTTPException
-from sqlalchemy.orm import Session
 from app.repository.document_repository import DocumentRepository
-from app.schema.user import UserBase
 from utils.logger import logger
 from utils.classify_pdf import *
 from utils.helper import move_file_classified_directory

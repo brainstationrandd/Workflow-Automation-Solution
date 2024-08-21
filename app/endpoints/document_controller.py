@@ -28,7 +28,7 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...), db: Session = Depends(get_db) ):
+async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...)):
     # save_directory = "data/uploaded_pdfs"
     os.makedirs(local_pdf_directory, exist_ok=True)
     try:
@@ -61,7 +61,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
                 model_arn = l1_model_arn,
                 document = doc,
                 file_name = file_name,
-                local_output_path = f"data/s3_output_zips/{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}",
+                local_output_path = f"data/s3_output_zips/{file_name}",
                 job_id = ''
             )
 

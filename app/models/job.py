@@ -2,14 +2,12 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
-class Report(Base):
-    __tablename__ = 'report'
+
+class Job(Base):
+    __tablename__ = 'job'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    name = Column(String(255), nullable=False)
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
-    query = Column(String(65535), nullable=False)
-    path = Column(String(255), nullable=False)
-    user = relationship('User', back_populates='report')
+    description = Column(String(65535), nullable=True)
 
 from app.models.user import User
-
-
