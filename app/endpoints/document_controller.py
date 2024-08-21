@@ -9,8 +9,7 @@ import uuid
 from app.repository.document_repository import DocumentRepository
 from datetime import datetime
 from app.config import l1_model_arn, l1_bucket_name, local_pdf_directory
-import asyncio
-from functools import partial
+import httpx
 router = APIRouter()
 
 @router.get("/{document_id}", response_model=DocumentBase)
@@ -78,3 +77,24 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
+
+@router.post("/sns-endpoint/")
+async def sns_endpoint(request: Request):
+    data = await request.json()
+
+    # Handle SNS subscription confirmation
+    if "SubscribeURL" in data:
+        subscribe_url = data["SubscribeURL"]
+        # Confirm the subscription by making a GET request to the SubscribeURL
+        async with httpx.AsyncClient() as client:
+            response = await client.get(subscribe_url)
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="Subscription confirmation failed")
+
+    # Handle SNS notifications
+    if "Message" in data:
+        message = data["Message"]
+        # Process the message, e.g., log it or trigger another action
+        print(f"Received SNS message: {message}")
+
+    return {"status": "success"}
