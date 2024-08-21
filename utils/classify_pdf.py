@@ -35,7 +35,10 @@ def start_classification_job(s3_input_uri, s3_output_uri, model_arn):
             'S3Uri': s3_output_uri
         },
         DataAccessRoleArn=comprehendAITeam,  # IAM Role with necessary permissions
-        DocumentClassifierArn=model_arn
+        DocumentClassifierArn=model_arn,
+        # JobCompletionNotificationChannel={
+            
+        # }
     )
     return response['JobId']
 
