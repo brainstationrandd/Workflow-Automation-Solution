@@ -21,3 +21,4 @@ pdfminer.six
 PyPDF2
 elasticsearch==7.8.0
 websockets
+elasticsearch==7.8.0
