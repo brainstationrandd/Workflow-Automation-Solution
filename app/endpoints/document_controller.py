@@ -31,7 +31,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
     # save_directory = "data/uploaded_pdfs"
     os.makedirs(local_pdf_directory, exist_ok=True)
     try:
-        docs_w_metadata = []
+        # docs_w_metadata = []
         for file in files:
             original_filename = file.filename
             name, ext = os.path.splitext(original_filename)
@@ -49,24 +49,29 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] 
                 summary = "",
                 category = "",
                 sub_category = "",
-                classification_status= "IN PROGRESS"
+                classification_status= "IN PROGRESS",
+                comprehend_job_id=""
             )
             
-            db_file = DocumentRepository.add_file(doc)
+            # db_file = DocumentRepository.add_file(doc)
 
             doc_w_metadata = DocumentWithMetadata(
-                document_id = db_file.id,
+                # document_id = db_file.id,
                 bucket_name = l1_bucket_name,
                 model_arn = l1_model_arn,
                 document = doc,
                 file_name = file_name,
                 local_output_path = f"data/s3_output_zips/{file_name}",
-                job_id = ''
+                # job_id = ''
             )
+            
+            job_id = classify_pdf(doc_w_metadata)
+            doc.comprehend_job_id = job_id
+            DocumentRepository.add_file(doc)
 
-            docs_w_metadata.append(doc_w_metadata)
+            # docs_w_metadata.append(doc_w_metadata)
 
-        background_tasks.add_task(classify_pdf, docs_w_metadata = docs_w_metadata)
+        # background_tasks.add_task(classify_pdf, docs_w_metadata = docs_w_metadata)
 
         logger.info("PDF files uploaded successfully and classification started.")
         return {"message": "PDF files uploaded successfully and classification started."}
@@ -92,11 +97,16 @@ async def sns_endpoint(request: Request):
                 raise HTTPException(status_code=400, detail="Subscription confirmation failed")
 
     # Handle SNS notifications
-    if "Message" in data:
-        message = data["Message"]
-        # Process the message, e.g., log it or trigger another action
-        logger.info(f"Received SNS message: {message}")
-        print(f"Received SNS message: {message}")
+    # if "Message" in data:
+    #     message = data["Message"]
+    #     # Process the message, e.g., log it or trigger another action
+    #     logger.info(f"Received SNS message: {message}")
+    #     print(f"Received SNS message: {message}")
+
+    if "Records" in data:
+        records = data["Records"]
+        for record in records:
+            process_record(record)
 
     print(data)
     logger.info(f"Entire Received SNS message: {data}")
