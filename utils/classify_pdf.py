@@ -37,7 +37,7 @@ def start_classification_job(s3_input_uri, s3_output_uri, model_arn):
         DataAccessRoleArn=comprehendAITeam,  # IAM Role with necessary permissions
         DocumentClassifierArn=model_arn,
         # JobCompletionNotificationChannel={
-            
+        #     'SNSTopicArn' :'arn:aws:sns:us-east-1:905418236735:classification:2409f6de-7040-48ae-9f8c-fdc5bbf6f9b7'
         # }
     )
     return response['JobId']
@@ -50,7 +50,7 @@ def get_classification_job_status(job_id):
     )
     return response['DocumentClassificationJobProperties']['JobStatus']
 
-def print_class(location):
+def find_out_class_from_tar(location):
     # location = os.path.join(location, "s3_output.tar.gz")
     with tarfile.open(location, 'r:gz') as tar:
         # Loop through the files in the tar archive
@@ -67,7 +67,7 @@ def print_class(location):
                 
 
                 
-def print_sub_class(location, threshold = sub_category_threshold):
+def find_out_sub_class_from_tar(location, threshold = sub_category_threshold):
     # location = os.path.join(location, "s3_output.tar.gz")
     with tarfile.open(location, 'r:gz') as tar:
         # Loop through the files in the tar archive
@@ -87,10 +87,11 @@ def print_sub_class(location, threshold = sub_category_threshold):
                     return str(ans[1:])
 
 
-def download_classification_results(s3_output_uri, job_id, local_output_path):
+def download_classification_results(s3_output_uri, key, local_output_path):
     """Download classification results from S3."""
     s3 = session.client('s3')
-    s3.download_file(s3_output_uri,f"output/{account_id}-CLN-{job_id}/output/output.tar.gz",local_output_path)
+    # s3.download_file(s3_output_uri,f"output/{account_id}-CLN-{job_id}/output/output.tar.gz",local_output_path)
+    s3.download_file(s3_output_uri,key,local_output_path)
 
 
 def create_jobs(docs_w_metadata:  List[DocumentWithMetadata]):
