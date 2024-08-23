@@ -23,7 +23,7 @@ class DocumentRepository:
             raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
         
     @staticmethod
-    async def get_doc_by_comprehend_job_id(job_id: int):
+    def get_doc_by_comprehend_job_id(job_id: int):
         db = SessionLocal()
         try:
             doc = db.query(Document).filter(Document.comprehend_job_id == job_id).first()
@@ -40,7 +40,7 @@ class DocumentRepository:
     @staticmethod
     def update_doc_by_comprehend_job_id(job_id: int, document: UpdateDocumentComprehend):
         db = SessionLocal()
-        logger.info(f"entering db for {job_id}")
+        # logger.info(f"entering db for {job_id}")
         try:
             doc = db.query(Document).filter(Document.comprehend_job_id == job_id).first()
             if not doc:
@@ -49,11 +49,13 @@ class DocumentRepository:
                 doc.classification_status = document.classification_status
             if document.category:
                 doc.category = document.category
+                logger.info(f"db (category) updated for {job_id}")
             if document.sub_category:
                 doc.sub_category = document.sub_category
+                logger.info(f"db (subcategory) updated for {job_id}")
+
             db.commit()
             db.refresh(doc)
-            logger.info(f"db updated for {job_id}")
             return doc
         except HTTPException as e:
             logger.info(f'An HTTP error occurred: \n {str(e)}')
