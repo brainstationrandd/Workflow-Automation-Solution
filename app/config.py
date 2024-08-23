@@ -12,3 +12,6 @@ l2_model_arn = config['l2_model_arn']
 l2_bucket_name = config['l2_bucket_name']
 local_pdf_directory = "data/uploaded_pdfs"
 sub_category_threshold = 0.3
+sns_topic_subscription_arn = config['sns_topic_subscription_arn']
+sns_topic_arn = config['sns_topic_arn']
+region_name = config['region_name']

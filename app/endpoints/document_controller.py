@@ -28,52 +28,67 @@ async def get_doc_by_id(document_id: int):
 
 @router.post("/upload-pdfs/")
 async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...)):
-    # save_directory = "data/uploaded_pdfs"
+    """
+    Upload a list of PDF files and trigger the classification process.
+
+    Args:
+        background_tasks (BackgroundTasks): _description_
+        files (list[UploadFile], optional): _description_. Defaults to File(...).
+
+    Returns:
+        _type_: _description_
+    """
+    # Create the local directory to store the PDF files if it doesn't exist
     os.makedirs(local_pdf_directory, exist_ok=True)
+
     try:
-        docs_w_metadata = []
         for file in files:
+            # Get the original filename and create a new filename with a timestamp
             original_filename = file.filename
             name, ext = os.path.splitext(original_filename)
-            # file_path = os.path.join(save_directory, f"{uuid.uuid4()}.pdf")
             file_name = f"{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}"
             file_path = os.path.join(local_pdf_directory, file_name)
+
+            # Write the file to the local directory
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()
                 await out_file.write(content)
 
+            # Create a new document in the database
             doc = DocumentBase(
-                path = file_path,
+                path=file_path,
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
-                summary = "",
-                category = "",
-                sub_category = "",
-                classification_status= "IN PROGRESS"
+                summary="",
+                category="",
+                sub_category="",
+                classification_status="IN PROGRESS",
+                comprehend_job_id=""
             )
-            
-            db_file = DocumentRepository.add_file(doc)
 
+            # Create a DocumentWithMetadata object to be used for classification
             doc_w_metadata = DocumentWithMetadata(
-                document_id = db_file.id,
-                bucket_name = l1_bucket_name,
-                model_arn = l1_model_arn,
-                document = doc,
-                file_name = file_name,
-                local_output_path = f"data/s3_output_zips/{file_name}",
-                job_id = ''
+                bucket_name=l1_bucket_name,
+                model_arn=l1_model_arn,
+                document=doc,
+                file_name=file_name,
+                local_output_path=f"data/s3_output_zips/{file_name}",
             )
 
-            docs_w_metadata.append(doc_w_metadata)
+            # Trigger the classification process
+            job_id = classify_pdf(doc_w_metadata)
+            doc.comprehend_job_id = job_id
+            DocumentRepository.add_file(doc)
 
-        background_tasks.add_task(classify_pdf, docs_w_metadata = docs_w_metadata)
-
+        # Log the successful upload and classification
         logger.info("PDF files uploaded successfully and classification started.")
         return {"message": "PDF files uploaded successfully and classification started."}
     except HTTPException as e:
+        # Log any HTTP errors
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
     except Exception as e:
+        # Log any errors
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
@@ -91,11 +106,13 @@ async def sns_endpoint(request: Request):
             if response.status_code != 200:
                 raise HTTPException(status_code=400, detail="Subscription confirmation failed")
 
-    # Handle SNS notifications
-    if "Message" in data:
-        message = data["Message"]
-        # Process the message, e.g., log it or trigger another action
-        logger.info(f"Received SNS message: {message}")
-        print(f"Received SNS message: {message}")
+    if "Records" in data:
+        records = data["Records"]
+        for record in records:
+            process_record(record)
+
+    print(data)
+    logger.info(f"Entire Received SNS message: {data}")
 
     return {"status": "success"}
+

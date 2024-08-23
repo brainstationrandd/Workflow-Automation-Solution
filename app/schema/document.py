@@ -12,10 +12,12 @@ class DocumentBase(BaseModel):
     category: str
     sub_category: str
     classification_status: str = 'NOT STARTED'
+    comprehend_job_id: str
 
 class UpdateDocument(BaseModel):
     path: optional[str] = None
     summary: optional[str] = None
+    comprehend_job_id: optional[str] = None
     category: optional[str] = None
     sub_category: optional[str] = None
     classification_status: optional[str] = None
@@ -35,10 +37,15 @@ class DocumentInit(BaseModel):
     classification_status: str = 'NOT STARTED'
 
 class DocumentWithMetadata(BaseModel):
-    document_id: int
+    # document_id: int
     bucket_name: str
     model_arn: str
     local_output_path: str
     file_name: str
     document: DocumentBase
-    job_id: str
+    # job_id: str
+
+class UpdateDocumentComprehend(BaseModel):
+    category: optional[str] = None
+    sub_category: optional[str] = None
+    classification_status: optional[str] = None

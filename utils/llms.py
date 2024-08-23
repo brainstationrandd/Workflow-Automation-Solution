@@ -7,7 +7,8 @@ from app.config import *
 session = boto3.session.Session(
     aws_access_key_id=key,
     aws_secret_access_key=secret,
-    aws_session_token=session_token
+    aws_session_token=session_token,
+    region_name="us-east-1"
 )
 
 bedrock = session.client('bedrock-runtime',region_name="us-east-1")

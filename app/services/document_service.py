@@ -2,7 +2,7 @@ from http.client import HTTPException
 from app.repository.document_repository import DocumentRepository
 from utils.logger import logger
 from utils.classify_pdf import *
-from utils.helper import move_file_classified_directory
+from utils.helper import move_file_to_classified_directory
 from app.schema.document import *
 import os
 from app.config import l2_bucket_name, l2_model_arn, local_pdf_directory
@@ -16,111 +16,106 @@ def get_doc_by_id_service(id: int):
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
     
-async def classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
+
+
+def initiate_classification_process(path: str, bucket_name: str, model_arn: str):
     """Extract text from a PDF, upload it to S3, and classify it using Amazon Comprehend."""
-    job_id_flags = create_jobs(docs_w_metadata)
 
-    sub_docs_w_metadata = []
-    start_time = time.time()
-    jobs_in_q = len(job_id_flags)
-    while not all(job_id_flags.values()):
-        for doc_w_metadata in docs_w_metadata:
-            if job_id_flags[doc_w_metadata.job_id] : continue
-            status = get_classification_job_status(doc_w_metadata.job_id)
+    # Extract Text
+    text = extract_text_from_pdf(path)
 
-            #wait till classification is complete
-            if status in ['COMPLETED', 'FAILED']:
-                job_id_flags[doc_w_metadata.job_id] = 1
-                jobs_in_q -= 1
-                if status == 'COMPLETED':
-                    local_output_path = f"{doc_w_metadata.local_output_path}-{doc_w_metadata.job_id}.tar.gz"
-                    
-                    #download classification data
-                    download_classification_results(doc_w_metadata.bucket_name, doc_w_metadata.job_id, local_output_path)
-                    logger.info(f"{doc_w_metadata.job_id} tar.gz downloaded")
-                    
-                    predicted_category = print_class(local_output_path)
-                    doc_w_metadata.document.category = predicted_category
-                    logger.info(f"class({doc_w_metadata.job_id}) = {predicted_category}")
-                    
-                    #Move pdf to classified directory
-                    classified_directory = move_file_classified_directory(doc_w_metadata.file_name, predicted_category)
+    #Upload to S3
+    s3_input_key = f'input/{path[:-3]}/input.txt'
+    upload_to_s3(text, bucket_name, s3_input_key)
+    s3_input_uri = f's3://{bucket_name}/{s3_input_key}'
+    s3_output_uri = f's3://{bucket_name}/output/'
+    
+    # Send to document to classify
+    job_id_x = start_classification_job(s3_input_uri, s3_output_uri, model_arn)
+    return job_id_x
 
-                    #update db according to category
-                    update_data = UpdateDocument(classification_status = status, category = predicted_category, path = classified_directory)
-                    doc_w_metadata.document.path = classified_directory
-                    DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
-                    logger.info(f"{doc_w_metadata.job_id}: db updated")
 
-                    #store CVs of Software Engineers
-                    if predicted_category == "SOFTWARE-ENGINEER":
-                        sub_doc_w_metadata = DocumentWithMetadata(
-                            document_id = doc_w_metadata.document_id,
-                            bucket_name = l2_bucket_name,
-                            model_arn = l2_model_arn,
-                            document = doc_w_metadata.document,
-                            file_name=doc_w_metadata.file_name,
-                            local_output_path = doc_w_metadata.local_output_path,
-                            job_id = ''
-                        )
-                        sub_docs_w_metadata.append(sub_doc_w_metadata)
-                else:
-                    #updaate db
-                    update_data = UpdateDocument(classification_status = status, category = "")
-                    DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
-                    logger.info(f"{doc_w_metadata.job_id}: Classification Failed")
-                    raise Exception("Classification job failed")
-            
-            logger.info(f"{doc_w_metadata.job_id}: {status}, ")
+def classify_pdf(doc_w_metadata:  DocumentWithMetadata):
+    """
+    Trigger the classification of a document using Amazon Comprehend.
 
-        logger.info(f"Time Elapsed = {time.time()-start_time}s, Jobs left to classify = {jobs_in_q}")
-        if not jobs_in_q: break
-        time.sleep(30)
+    This function is called when a document needs to be classified. It will
+    trigger the classification process by calling the
+    initiate_classification_process function with the appropriate parameters.
 
-    if len(sub_docs_w_metadata):
-        sub_classify_pdf(docs_w_metadata=sub_docs_w_metadata)
+    Args:
+        doc_w_metadata (DocumentWithMetadata): The document to be classified,
+            including its path, bucket name, and model ARN.
 
-def sub_classify_pdf(docs_w_metadata:  List[DocumentWithMetadata]):
-    job_id_flags = create_jobs(docs_w_metadata)
+    Returns:
+        str: The job ID of the classification job.
+    """
+    return initiate_classification_process(
+        doc_w_metadata.document.path, doc_w_metadata.bucket_name, doc_w_metadata.model_arn
+    )
 
-    start_time = time.time()
-    jobs_in_q = len(job_id_flags)
-    while not all(job_id_flags.values()):
-        for doc_w_metadata in docs_w_metadata:
-            if job_id_flags[doc_w_metadata.job_id] : continue
-            status = get_classification_job_status(doc_w_metadata.job_id)
 
-            #wait for classification job to be done
-            if status in ['COMPLETED', 'FAILED']:
-                job_id_flags[doc_w_metadata.job_id] = 1
-                jobs_in_q -= 1
-                if status == 'COMPLETED':
-                    local_output_path = f"{doc_w_metadata.local_output_path}-{doc_w_metadata.job_id}.tar.gz"
+def trigger_sub_classification(job_id: int) -> None:
+    """Trigger sub-classification of a document.
 
-                    download_classification_results(doc_w_metadata.bucket_name, doc_w_metadata.job_id, local_output_path)
-                    logger.info(f"{doc_w_metadata.job_id} tar.gz downloaded")
-                    
-                    predicted_category = print_sub_class(local_output_path)
-                    doc_w_metadata.document.sub_category = predicted_category
-                    logger.info(f"class({doc_w_metadata.job_id}) = {predicted_category}")
-                    
-                    #Move pdf to classified directory
-                    sub_classified_directory = move_file_classified_directory(doc_w_metadata.file_name, predicted_category, old_directory=os.path.join(local_pdf_directory,"SOFTWARE-ENGINEER"))
+    This function is called when a document has been classified as SOFTWARE-ENGINEER.
+    It will trigger the sub-classification process by calling the
+    initiate_classification_process function with the appropriate parameters.
 
-                    update_data = UpdateDocument(classification_status=status, sub_category=predicted_category, path = sub_classified_directory)
-                    doc_w_metadata.document.path = sub_classified_directory
+    Args:
+        job_id (int): The comprehend job id of the document
+    """
+    document = DocumentRepository.get_doc_by_comprehend_job_id(job_id)
 
-                    #Update db for subclassification
-                    DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
-                    logger.info(f"{doc_w_metadata.job_id}: db updated")
+    # Trigger sub-classification
+    sub_classification_job_id = initiate_classification_process(
+        document.path, l2_bucket_name, l2_model_arn
+    )
 
-                else:
-                    update_data = UpdateDocument(classification_status=status, sub_category = "")
-                    DocumentRepository.update_doc_status(doc_w_metadata.document_id, update_data)
-                    logger.info(f"{doc_w_metadata.job_id}: Classification Failed")
-                    raise Exception("Classification job failed")
-            logger.info(f"{doc_w_metadata.job_id}: {status}, ")
+    # Update the document status
+    DocumentRepository.update_doc_status(
+        document.id,
+        UpdateDocument(
+            classification_status="IN PROGRESS",
+            comprehend_job_id=sub_classification_job_id,
+        ),
+    )
 
-        logger.info(f"Time Elapsed = {time.time()-start_time}s, Jobs left to classify = {jobs_in_q}")
-        if not jobs_in_q: return
-        time.sleep(30)
+def process_record(record: dict) -> None:
+    """Process a single S3 bucket notification record"""
+    bucket_name = record['s3']['bucket']['name']
+    key = record['s3']['object']['key']
+    if not key.endswith(".tar.gz"):
+        logger.info(f"Skipping non-tar.gz file: {key}")
+        return
+
+    job_id = key.split("/")[1].split("-")[2]
+    local_output_path = f"data/s3_output_zips/{job_id}.tar.gz"
+
+    logger.info(f"Processing record: {job_id}")
+    # Download the classification output file
+    download_classification_results(bucket_name, key, local_output_path)
+
+    # Get the predicted category or sub-category from the tar file
+    if bucket_name == l1_bucket_name:
+        predicted_category = find_out_class_from_tar(local_output_path)
+        update_data = UpdateDocumentComprehend(classification_status="COMPLETED", category=predicted_category)
+
+    
+    elif bucket_name == l2_bucket_name:
+        predicted_category = find_out_sub_class_from_tar(local_output_path)
+        update_data = UpdateDocumentComprehend(classification_status="COMPLETED", sub_category=predicted_category)
+
+    # Update the document status in the database
+    doc = DocumentRepository.update_doc_by_comprehend_job_id(job_id, update_data)
+    new_path = move_file_to_classified_directory(predicted_category, doc.path)
+    doc = DocumentRepository.update_doc_status(doc.id, UpdateDocument(path=new_path))
+
+    if predicted_category == "SOFTWARE-ENGINEER":
+        # If the category is SOFTWARE-ENGINEER, trigger sub-classification
+        trigger_sub_classification(job_id)
+        
+    # Delete the downloaded tar file
+    if os.path.exists(local_output_path):
+        os.remove(local_output_path)
+    
