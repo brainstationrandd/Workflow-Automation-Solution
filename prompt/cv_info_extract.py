@@ -1,4 +1,3 @@
-from dotenv import dotenv_values
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from utils.helper import model_gpt_4o_mini
