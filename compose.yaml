@@ -18,6 +18,13 @@ services:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --reload
 
+  elasticsearch:
+    image: elasticsearch:7.8.0
+    ports:
+      - "9300:9200"
+    environment:
+      - discovery.type=single-node
+
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
 # start the database before your application. The `db-data` volume persists the
