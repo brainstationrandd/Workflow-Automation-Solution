@@ -7,6 +7,7 @@ from app.schema.document import *
 import os
 from app.config import l2_bucket_name, l2_model_arn, local_pdf_directory
 import shutil
+from app.services.elastic_search_helper import add_cv_file_to_index
 
 def get_doc_by_id_service(id: int):
     try:
@@ -114,6 +115,8 @@ def process_record(record: dict) -> None:
     if predicted_category == "SOFTWARE-ENGINEER":
         # If the category is SOFTWARE-ENGINEER, trigger sub-classification
         trigger_sub_classification(job_id)
+    else: 
+        add_cv_file_to_index(new_path)
         
     # Delete the downloaded tar file
     if os.path.exists(local_output_path):
