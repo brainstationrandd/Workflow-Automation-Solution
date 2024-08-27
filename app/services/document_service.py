@@ -117,6 +117,7 @@ def process_record(record: dict) -> None:
         trigger_sub_classification(job_id)
     else: 
         add_cv_file_to_index(new_path)
+        logger.info(f"adding {new_path} to elastic search")
         
     # Delete the downloaded tar file
     if os.path.exists(local_output_path):

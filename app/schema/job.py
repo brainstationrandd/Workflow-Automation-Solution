@@ -8,6 +8,7 @@ class JobBase(BaseModel):
     user_id: int
     name: str
     description: optional[str] = None
+    end_time: datetime
 
 
 class JobUpdate(BaseModel):

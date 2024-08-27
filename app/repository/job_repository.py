@@ -2,8 +2,10 @@ from fastapi import HTTPException
 from requests import Session
 from utils.logger import logger
 from app.models.job import Job
+from app.models.user import User
 from app.db import engine, SessionLocal, Base, get_db
 from app.schema.job import *
+from datetime import datetime
 
 class JobRepository:
     @staticmethod
@@ -77,6 +79,34 @@ class JobRepository:
             db.delete(db_job)
             db.commit()
             return db_job
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        finally:
+            db.close()
+    
+    @staticmethod
+    def get_expired_jobs():
+        db = SessionLocal()
+        now = datetime.now()
+        try:
+            jobs = db.query(Job.id).filter(Job.ended == False, Job.end_time < now).all()
+            return jobs
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        finally:
+            db.close()
+
+    @staticmethod
+    def get_email_by_job_id(job_id: int):
+        db = SessionLocal()
+        try:
+            user_email = db.query(User.email).join(Job, User.id == Job.user_id).filter(Job.id == job_id).first()
+            if not user_email:
+                logger.info(f"user email corresponding to {job_id} not found.")
+                raise HTTPException(status_code=404, detail="User not found")
+            return user_email
         except HTTPException as e:
             logger.info(f'An HTTP error occurred: \n {str(e)}')
             raise e

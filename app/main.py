@@ -8,6 +8,9 @@ import shutil
 
 from fastapi.middleware.cors import CORSMiddleware
 from utils.logger import logger
+from utils.scheduler import scheduler
+from app.services.email_service import scheduled_task
+from apscheduler.triggers.cron import CronTrigger
 from app.helpers.helper import http_error_handler
 from fastapi.exceptions import RequestValidationError
 from app.helpers.custom_exception_handler import validation_exception_handler
@@ -35,6 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 import os
+import atexit
 
 
 app.include_router(user_controller.router, prefix="/api/user", tags=["User"])
@@ -50,6 +54,13 @@ app.include_router(elastic_search_controller.router, prefix="/api/elastic_search
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
+
+app.on_event("startup")
+async def startup_event():
+    scheduler.start()
+
+scheduler.add_job(scheduled_task, CronTrigger(hour=14, minute=0))
+atexit.register(scheduler.shutdown())
 
 #Health Checker
 @app.get("/")
@@ -86,11 +97,3 @@ async def upload_files(files: List[UploadFile] = File(...)):
             raise HTTPException(status_code=500, detail=f"Failed to save file {file.filename}. Error: {str(e)}")
     
     return {"files": saved_files}
-
-
-
-
-# listen the app on port 8000
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=5000)

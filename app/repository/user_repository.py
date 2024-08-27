@@ -113,7 +113,7 @@ class UserRepository:
     
     
     @staticmethod
-    async def get_email_by_id(user_id: int):
+    def get_email_by_id(user_id: int):
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.id == user_id).first()

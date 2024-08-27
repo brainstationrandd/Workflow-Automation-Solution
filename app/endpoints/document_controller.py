@@ -10,6 +10,11 @@ from app.repository.document_repository import DocumentRepository
 from datetime import datetime
 from app.config import l1_model_arn, l1_bucket_name, local_pdf_directory
 import httpx
+from app.services.elastic_search_helper import add_cv_file_to_index
+from apscheduler.triggers.cron import CronTrigger
+from utils.scheduler import scheduler
+import time
+
 router = APIRouter()
 
 @router.get("/{document_id}", response_model=DocumentBase)
@@ -27,7 +32,7 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...)):
+async def upload_pdf(files: list[UploadFile] = File(...)):
     """
     Upload a list of PDF files and trigger the classification process.
 
@@ -116,3 +121,7 @@ async def sns_endpoint(request: Request):
 
     return {"status": "success"}
 
+
+# @router.on_event("startup")
+# async def startup_event():
+#     scheduler.start()
