@@ -59,7 +59,7 @@ app.on_event("startup")
 async def startup_event():
     scheduler.start()
 
-scheduler.add_job(scheduled_task, CronTrigger(hour=14, minute=0))
+scheduler.add_job(scheduled_task, CronTrigger(hour=20, minute=0))
 atexit.register(scheduler.shutdown())
 
 #Health Checker
