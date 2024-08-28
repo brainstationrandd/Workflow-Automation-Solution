@@ -4,15 +4,42 @@ import datetime
 from langchain_community.document_loaders import PyPDFLoader
 import os,json
 
-from elasticsearch import Elasticsearch
+from utils.helper import es
+
+index_mapping = {
+    "mappings": {
+        "properties": {
+            "name": {"type": "text"},
+            "email": {"type": "keyword"},  # Case-sensitive
+            "phone": {"type": "keyword", "normalizer": "lowercase_normalizer"},
+            "keywords": {"type": "keyword", "normalizer": "lowercase_normalizer"},
+            "experience": {"type": "integer"},
+            "education": {"type": "text"},
+            "skills": {"type": "keyword", "normalizer": "lowercase_normalizer"},
+            "location": {"type": "text"},
+            "created_at": {"type": "date"}
+        }
+    },
+    "settings": {
+        "analysis": {
+            "normalizer": {
+                "lowercase_normalizer": {
+                    "type": "custom",
+                    "filter": ["lowercase"]
+                }
+            }
+        }
+    }
+}
 
 
-# Initialize Elasticsearch client with scheme
-es = Elasticsearch(
-    [{'host': 'localhost', 'port': 9300, 'scheme': 'http'}]  # Use 'https' if applicable
-)
-
-
+if not es.indices.exists(index='cv_data'):
+    es.indices.create(index='cv_data', body=index_mapping, ignore=400)
+    
+if es.ping():
+    logger.info("Connected to ElasticSearch")
+else:
+    logger.error("Could not connect to ElasticSearch")    
 
 def add_cv_file_to_index(filepath):
     try:

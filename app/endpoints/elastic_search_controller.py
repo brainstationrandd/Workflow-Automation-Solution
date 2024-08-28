@@ -1,18 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, WebSocket, WebSocketDisconnect
-from utils.logger import logger
-from app.models.user_role import User_role
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.user_role_service import *
 router = APIRouter()
-from fastapi import FastAPI, Query
-from elasticsearch import Elasticsearch
-from typing import List, Optional
-from pydantic import BaseModel
-
-# Initialize Elasticsearch client with scheme
-es = Elasticsearch(
-    [{'host': 'localhost', 'port': 9300, 'scheme': 'http'}]  # Use 'https' if applicable
-)
-
+from utils.helper import es
 
 # @router.get("/search")
 # async def search_cv(

@@ -20,6 +20,6 @@ ENV PORT=8000
  
 # Run uvicorn when the container launches. Use the --host flag to bind uvicorn
 # to 0.0.0.0 so that it's accessible from outside the container.
-# CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["sh", "-c", "python app/services/elastic_search_cv_index.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["sh", "-c", "python app/services/elastic_search_cv_index.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
  
