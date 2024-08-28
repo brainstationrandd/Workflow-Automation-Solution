@@ -8,6 +8,14 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.chat_models import BedrockChat
 from langchain_community.embeddings import BedrockEmbeddings
 
+from elasticsearch import Elasticsearch
+
+
+es = Elasticsearch(
+    [{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}]  # Use 'https' if applicable
+)
+
+
 
 
 config = dotenv_values(".env")
