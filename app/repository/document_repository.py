@@ -8,7 +8,7 @@ from app.schema.document import *
 
 class DocumentRepository:
     @staticmethod
-    async def get_doc_by_id(document_id: int):
+    def get_doc_by_id(document_id: int):
         db = SessionLocal()
         try:
             doc = db.query(Document).filter(Document.id == document_id).first()

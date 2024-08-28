@@ -55,12 +55,12 @@ app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
-app.on_event("startup")
-async def startup_event():
-    scheduler.start()
+# app.on_event("startup")
+# async def startup_event():
+scheduler.start()
 
-scheduler.add_job(scheduled_task, CronTrigger(hour=20, minute=0))
-atexit.register(scheduler.shutdown())
+scheduler.add_job(scheduled_task, CronTrigger(hour=20, minute=47))
+# atexit.register(scheduler.shutdown())
 
 #Health Checker
 @app.get("/")

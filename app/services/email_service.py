@@ -1,12 +1,15 @@
 from app.repository.job_repository import JobRepository
 import requests
 from app.config import MAILGUN_API_KEY, MAILGUN_DOMAIN
+from utils.logger import logger
 def scheduled_task():
     expired_jobs = JobRepository.get_expired_jobs()
+    logger.info(f"expired jobs: {expired_jobs}")
 
     if not expired_jobs: return
 
     emails = [JobRepository.get_email_by_job_id(job) for job in expired_jobs]
+    logger.info(f"emails: {emails}")
 
     for email in emails:
         send_email(email)
