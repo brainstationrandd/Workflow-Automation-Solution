@@ -9,10 +9,10 @@ import uuid
 from app.repository.document_repository import DocumentRepository
 from datetime import datetime
 from app.config import l1_model_arn, l1_bucket_name, local_pdf_directory
-import httpx
 from app.services.elastic_search_helper import add_cv_file_to_index
 from apscheduler.triggers.cron import CronTrigger
 from utils.scheduler import scheduler
+from utils.websocket import manager
 import time
 
 router = APIRouter()
@@ -32,17 +32,8 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(files: list[UploadFile] = File(...)):
-    """
-    Upload a list of PDF files and trigger the classification process.
+async def upload_pdf(job_id: int, files: list[UploadFile] = File(...)):
 
-    Args:
-        background_tasks (BackgroundTasks): _description_
-        files (list[UploadFile], optional): _description_. Defaults to File(...).
-
-    Returns:
-        _type_: _description_
-    """
     # Create the local directory to store the PDF files if it doesn't exist
     os.makedirs(local_pdf_directory, exist_ok=True)
 
@@ -68,7 +59,8 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
                 category="",
                 sub_category="",
                 classification_status="IN PROGRESS",
-                comprehend_job_id=""
+                comprehend_job_id="",
+                job_id = job_id
             )
 
             # Create a DocumentWithMetadata object to be used for classification
@@ -99,29 +91,16 @@ async def upload_pdf(files: list[UploadFile] = File(...)):
     
 
 @router.post("/sns-endpoint/")
-async def sns_endpoint(request: Request):
-    data = await request.json()
+async def handle_sns_endpoint(request: Request):
+    request_data = await request.json()
 
-    # Handle SNS subscription confirmation
-    if "SubscribeURL" in data:
-        subscribe_url = data["SubscribeURL"]
-        # Confirm the subscription by making a GET request to the SubscribeURL
-        async with httpx.AsyncClient() as client:
-            response = await client.get(subscribe_url)
-            if response.status_code != 200:
-                raise HTTPException(status_code=400, detail="Subscription confirmation failed")
-
-    if "Records" in data:
-        records = data["Records"]
-        for record in records:
-            process_record(record)
-
-    print(data)
-    logger.info(f"Entire Received SNS message: {data}")
+    await handle_sns_subscription_confirmation(request_data)
+    await handle_sns_records(request_data)
 
     return {"status": "success"}
 
 
-# @router.on_event("startup")
-# async def startup_event():
-#     scheduler.start()
+
+
+
+
