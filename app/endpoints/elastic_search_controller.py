@@ -1,7 +1,15 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.user_role_service import *
 router = APIRouter()
-from utils.helper import es
+# from utils.helper import es
+
+from elasticsearch import Elasticsearch
+
+
+es = Elasticsearch(
+    [{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}]  # Use 'https' if applicable
+)
+
 
 # @router.get("/search")
 # async def search_cv(

@@ -23,6 +23,7 @@ from app.endpoints import role_controller
 from app.endpoints import user_role_controller
 from app.endpoints import job_controller
 from app.endpoints import elastic_search_controller
+from app.endpoints import sort_and_review_controler
 sessions = {}
 
 origins = ["*"]
@@ -44,7 +45,7 @@ app.include_router(role_controller.router, prefix="/api/role", tags=["Role"])
 app.include_router(user_role_controller.router, prefix="/api/user_role", tags=["UserRole"])
 app.include_router(job_controller.router, prefix="/api/job", tags=["Job"])
 app.include_router(elastic_search_controller.router, prefix="/api/elastic_search", tags=["ElasticSearch"])
-
+app.include_router(sort_and_review_controler.router, prefix="/api/sort_and_review", tags=["SortAndReview"])
 
 
 app.add_exception_handler(HTTPException, http_error_handler)
