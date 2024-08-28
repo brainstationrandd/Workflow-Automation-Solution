@@ -5,13 +5,13 @@ from langchain_community.document_loaders import PyPDFLoader
 import os,json
 
 # from utils.helper import es
-
 from elasticsearch import Elasticsearch
 
 
 es = Elasticsearch(
     [{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}]  # Use 'https' if applicable
 )
+
 
 index_mapping = {
     "mappings": {

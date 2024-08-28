@@ -10,6 +10,7 @@ es = Elasticsearch(
     [{'host': 'elasticsearch', 'port': 9200, 'scheme': 'http'}]  # Use 'https' if applicable
 )
 
+
 # @router.get("/search")
 # async def search_cv(
 #     name: Optional[str] = None,
