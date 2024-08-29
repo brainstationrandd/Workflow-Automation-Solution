@@ -58,7 +58,6 @@ app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
-# app.on_event("startu
 
 
 
