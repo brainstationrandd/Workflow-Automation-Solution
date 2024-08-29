@@ -52,7 +52,7 @@ app.include_router(user_role_controller.router, prefix="/api/user_role", tags=["
 app.include_router(job_controller.router, prefix="/api/job", tags=["Job"])
 app.include_router(elastic_search_controller.router, prefix="/api/elastic_search", tags=["ElasticSearch"])
 app.include_router(sort_and_review_controler.router, prefix="/api/sort_and_review", tags=["SortAndReview"])
-app.include_router(notification_controller.router, prefix="/api/notification", tags=["Notification"])
+app.include_router(notification_controller.router, prefix="/api/notifications", tags=["Notifications"])
 
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

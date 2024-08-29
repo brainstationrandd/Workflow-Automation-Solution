@@ -4,7 +4,7 @@ from app.helpers.custom_exception_handler import *
 
 router = APIRouter()
 
-@router.websocket("/notifications")
+@router.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:

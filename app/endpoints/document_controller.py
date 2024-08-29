@@ -96,7 +96,7 @@ async def handle_sns_endpoint(request: Request):
 
     await handle_sns_subscription_confirmation(request_data)
     await handle_sns_records(request_data)
-    await manager.broadcast("hello nigger. cv dropped")
+    await manager.broadcast("0")
 
     return {"status": "success"}
 
