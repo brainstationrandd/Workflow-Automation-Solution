@@ -118,9 +118,9 @@ async def handle_sns_records(request_data):
     # Process each record
     for record in records:
         # Process the record
-        process_record(record)
+        await process_record(record)
 
-def process_record(record: dict) -> None:
+async def process_record(record: dict) -> None:
     """
     Process a single S3 bucket notification record.
 
@@ -185,7 +185,7 @@ def process_record(record: dict) -> None:
     else:
         # Add the cv file to the index and broadcast the user ID
         add_cv_file_to_index(new_path)
-        manager.broadcast(str(user_id))
+        await manager.broadcast(str(user_id))
 
     # Remove the downloaded tar file
     if os.path.exists(output_path):
