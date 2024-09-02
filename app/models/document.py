@@ -5,6 +5,7 @@ from app.db import Base
 class Document(Base):
     __tablename__ = 'document'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    job_id = Column(Integer, ForeignKey('job.id'), nullable=False)
     path = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
@@ -17,3 +18,4 @@ class Document(Base):
 
 
 from app.models.document_metatag import Document_metatag
+from app.models.job import Job

@@ -15,3 +15,5 @@ sub_category_threshold = 0.3
 sns_topic_subscription_arn = config['sns_topic_subscription_arn']
 sns_topic_arn = config['sns_topic_arn']
 region_name = config['region_name']
+MAILGUN_API_KEY = config['MAILGUN_API_KEY']
+MAILGUN_DOMAIN = config['MAILGUN_DOMAIN']

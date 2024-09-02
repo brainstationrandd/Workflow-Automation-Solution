@@ -8,6 +8,9 @@ import shutil
 
 from fastapi.middleware.cors import CORSMiddleware
 from utils.logger import logger
+from utils.scheduler import scheduler
+from app.services.email_service import scheduled_task
+from apscheduler.triggers.cron import CronTrigger
 from app.helpers.helper import http_error_handler
 from fastapi.exceptions import RequestValidationError
 from app.helpers.custom_exception_handler import validation_exception_handler
@@ -22,6 +25,10 @@ from app.endpoints import document_controller
 from app.endpoints import role_controller
 from app.endpoints import user_role_controller
 from app.endpoints import job_controller
+from app.endpoints import elastic_search_controller
+from app.endpoints import sort_and_review_controler
+from app.endpoints import notification_controller
+
 sessions = {}
 
 origins = ["*"]
@@ -34,6 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 import os
+import atexit
 
 
 app.include_router(user_controller.router, prefix="/api/user", tags=["User"])
@@ -42,13 +50,23 @@ app.include_router(document_controller.router, prefix="/api/document", tags=["Do
 app.include_router(role_controller.router, prefix="/api/role", tags=["Role"])
 app.include_router(user_role_controller.router, prefix="/api/user_role", tags=["UserRole"])
 app.include_router(job_controller.router, prefix="/api/job", tags=["Job"])
-
-
-
+app.include_router(elastic_search_controller.router, prefix="/api/elastic_search", tags=["ElasticSearch"])
+app.include_router(sort_and_review_controler.router, prefix="/api/sort_and_review", tags=["SortAndReview"])
+app.include_router(notification_controller.router, prefix="/api/notifications", tags=["Notifications"])
 
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
+
+
+
+
+# -----------------------------------------------
+# UNCOMMENT THIS TO RUN SCHEDULER [FIX TIME]
+# -----------------------------------------------
+# scheduler.start()
+
+# scheduler.add_job(scheduled_task, CronTrigger(minute='*/1', timezone='UTC'))
 
 #Health Checker
 @app.get("/")
@@ -85,11 +103,3 @@ async def upload_files(files: List[UploadFile] = File(...)):
             raise HTTPException(status_code=500, detail=f"Failed to save file {file.filename}. Error: {str(e)}")
     
     return {"files": saved_files}
-
-
-
-
-# listen the app on port 8000
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=5000)

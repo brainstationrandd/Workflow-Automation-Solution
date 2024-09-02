@@ -8,7 +8,7 @@ from app.schema.document import *
 
 class DocumentRepository:
     @staticmethod
-    async def get_doc_by_id(document_id: int):
+    def get_doc_by_id(document_id: int):
         db = SessionLocal()
         try:
             doc = db.query(Document).filter(Document.id == document_id).first()
@@ -102,7 +102,8 @@ class DocumentRepository:
                 category = document.category,
                 sub_category = document.sub_category,
                 classification_status = document.classification_status,
-                comprehend_job_id = document.comprehend_job_id
+                comprehend_job_id = document.comprehend_job_id,
+                job_id = document.job_id
             )
             db.add(db_file)
             db.commit()
