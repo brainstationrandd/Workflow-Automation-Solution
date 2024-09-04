@@ -13,6 +13,7 @@ class DocumentBase(BaseModel):
     sub_category: str
     classification_status: str = 'NOT STARTED'
     comprehend_job_id: str
+    job_id: int
 
 class UpdateDocument(BaseModel):
     path: optional[str] = None

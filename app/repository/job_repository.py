@@ -112,3 +112,15 @@ class JobRepository:
             raise e
         finally:
             db.close()
+
+    @staticmethod
+    def get_user_by_job_id(job_id: int):
+        db = SessionLocal()
+        try:
+            job = db.query(Job).filter(Job.id == job_id).first()
+            return job.user_id
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        finally:
+            db.close()
