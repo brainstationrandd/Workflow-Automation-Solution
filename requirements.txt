@@ -26,3 +26,4 @@ PyPDF2
 httpx==0.27.0
 elasticsearch==7.8.0
 websockets
+alembic

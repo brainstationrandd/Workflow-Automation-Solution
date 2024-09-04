@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+metadata = Base.metadata
 class Admin(Base):
     __tablename__ = 'admin'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
