@@ -16,6 +16,7 @@ class Document(Base):
     category = Column(String(255), nullable=True)
     sub_category = Column(String(255), nullable=True)
     classification_status = Column(Enum('NOT STARTED', 'IN PROGRESS', 'DONE', 'COMPLETED', 'FAILED', name='status'), default='NOT STARTED', nullable=True)
+    pdf_hash = Column(String(64), nullable=False)  # New column to store the hash
     document_metatag = relationship('Document_metatag', back_populates='document')
 
 

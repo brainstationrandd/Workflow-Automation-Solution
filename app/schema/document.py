@@ -14,6 +14,7 @@ class DocumentBase(BaseModel):
     classification_status: str = 'NOT STARTED'
     comprehend_job_id: str
     job_id: int
+    pdf_hash: str
 
 class UpdateDocument(BaseModel):
     path: optional[str] = None

@@ -130,6 +130,8 @@ async def process_record(record: dict) -> None:
     # Extract the bucket name and object key from the record
     bucket_name = record['s3']['bucket']['name']
     object_key = record['s3']['object']['key']
+    
+    category=""
 
     # Check if the object key ends with ".tar.gz" and return if it doesn't
     if not object_key.endswith(".tar.gz"):
