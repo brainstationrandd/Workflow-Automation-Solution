@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+metadata = Base.metadata
+
 class User(Base):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)

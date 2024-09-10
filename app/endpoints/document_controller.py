@@ -14,6 +14,9 @@ from apscheduler.triggers.cron import CronTrigger
 from utils.scheduler import scheduler
 from utils.websocket import manager
 import time
+import hashlib
+from sqlalchemy.orm import Session
+from app.models.document import Document
 
 router = APIRouter()
 
@@ -32,10 +35,11 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(job_id: int, files: list[UploadFile] = File(...)):
+async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Session = Depends(get_db)):
 
     # Create the local directory to store the PDF files if it doesn't exist
     os.makedirs(local_pdf_directory, exist_ok=True)
+    
 
     try:
         for file in files:
@@ -49,6 +53,20 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...)):
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()
                 await out_file.write(content)
+                
+            # Generate the SHA-256 hash of the PDF content
+            pdf_hash = hashlib.sha256(content).hexdigest()
+            
+            # Check if the document with the same hash already exists in the database
+            existing_doc = db.query(Document).filter_by(pdf_hash=pdf_hash).first() 
+            
+            if existing_doc:
+                # If the document already exists, update the job_id and skip classification
+                existing_doc.job_id = job_id
+                existing_doc.updated_at = datetime.utcnow()
+                db.commit()
+                logger.info(f"PDF {original_filename} already classified, skipping classification.")
+                continue   
 
             # Create a new document in the database
             doc = DocumentBase(
@@ -60,7 +78,8 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...)):
                 sub_category="",
                 classification_status="IN PROGRESS",
                 comprehend_job_id="",
-                job_id = job_id
+                job_id = job_id,
+                pdf_hash=pdf_hash
             )
 
             # Create a DocumentWithMetadata object to be used for classification

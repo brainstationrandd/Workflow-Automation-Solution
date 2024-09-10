@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+metadata = Base.metadata
 class Document_metatag(Base):
     __tablename__ = 'document_metatag'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)

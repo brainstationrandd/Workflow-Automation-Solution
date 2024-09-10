@@ -103,7 +103,8 @@ class DocumentRepository:
                 sub_category = document.sub_category,
                 classification_status = document.classification_status,
                 comprehend_job_id = document.comprehend_job_id,
-                job_id = document.job_id
+                job_id = document.job_id,
+                pdf_hash = document.pdf_hash
             )
             db.add(db_file)
             db.commit()

@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+metadata = Base.metadata
+
 class Role(Base):
     __tablename__ = 'role'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)

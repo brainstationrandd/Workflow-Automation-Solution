@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Foreign
 from sqlalchemy.orm import relationship
 from app.db import Base
 
+metadata = Base.metadata
+
 class Metatag(Base):
     __tablename__ = 'metatag'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
