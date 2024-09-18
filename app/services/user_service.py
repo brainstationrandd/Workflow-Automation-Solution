@@ -2,8 +2,8 @@ from http.client import HTTPException
 from fastapi import HTTPException as FastAPIHTTPException
 from sqlalchemy.orm import Session
 from app.repository.user_repository import UserRepository
-from app.schema.user import UserBase
-from app.helpers.hash_password import check_password
+from app.schema.user import UserBase, UserLogin
+from app.helpers.hash_password import check_password, check_password_for_login
 from utils.logger import logger
 import os
 
@@ -39,6 +39,31 @@ async def create_user_service(user: UserBase):
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
+
+
+async def login_user_service(user: UserLogin, db: Session):
+    try:
+        db_user = await UserRepository.get_user_by_email(db, user.email)
+        
+        if db_user is None:
+            logger.warning(f"Login attempt failed: User not found for email {user.email}")
+            raise FastAPIHTTPException(status_code=404, detail="User not found")
+
+        
+        if not check_password_for_login(user.password, db_user.password):
+            logger.warning(f"Login attempt failed: Incorrect password for user {db_user.email}")
+            raise FastAPIHTTPException(status_code=401, detail="Incorrect password")
+        
+        logger.info(f"User logged in successfully: {db_user.email}")
+        return db_user
+    
+    except FastAPIHTTPException as e:
+        logger.error(f"HTTP exception during login: {e.detail}")
+        raise e
+    
+    except Exception as e:
+        logger.error(f"Unexpected error during login: {str(e)}")
+        raise FastAPIHTTPException(status_code=500, detail="Internal server error")
 
 
 async def delete_user_service(user_id):

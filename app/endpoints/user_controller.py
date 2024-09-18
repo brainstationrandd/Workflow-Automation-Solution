@@ -17,6 +17,15 @@ async def create_user(user: UserBase):
         raise e
 
 
+@router.post("/login", response_model=UserResponse)
+async def login_user(user: UserLogin, db: Session = Depends(get_db)):
+    try:
+        logged_in_user = await login_user_service(user, db)
+        return custom_response_handler(200, "User logged in successfully", logged_in_user)
+    except HTTPException as e:
+        raise e
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int):
     try:
