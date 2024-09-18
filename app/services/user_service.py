@@ -24,6 +24,13 @@ def get_user_by_id_service(id: int):
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
 
+def get_all_users_service():
+    try:
+        return UserRepository.get_all_users()
+    except Exception as e:
+        logger.exception("Error in get_all_users_service")
+        raise
+
 def get_user_by_email(db: Session, email: str):
     try:
         user = UserRepository.get_user_by_email(db, email)
