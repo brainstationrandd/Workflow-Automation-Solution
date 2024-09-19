@@ -6,11 +6,13 @@ from app.helpers.custom_exception_handler import *
 # from app.repository.document_repository import DocumentRepository
 from utils.logger import logger
 from utils.helper import custom_response_handler
+from app.schema.job import *
+
 
 
 router = APIRouter()
 
-@router.get("/", response_model=List[JobBase])
+@router.get("/")
 async def get_all_jobs():
     try:
         jobs = await get_all_jobs_service()
