@@ -5,6 +5,8 @@ from app.services.job_service import *
 from app.helpers.custom_exception_handler import *
 # from app.repository.document_repository import DocumentRepository
 from utils.logger import logger
+from utils.helper import custom_response_handler
+
 
 router = APIRouter()
 
@@ -12,7 +14,7 @@ router = APIRouter()
 async def get_all_jobs():
     try:
         jobs = await get_all_jobs_service()
-        return jobs
+        return custom_response_handler(200, "Jobs retrieved successfully", jobs)
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
@@ -24,7 +26,7 @@ async def get_all_jobs():
 async def create_job(job: JobBase):
     try:
         new_job = await create_job_service(job)
-        return new_job
+        return custom_response_handler(201, "Job created successfully", new_job)
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
@@ -37,7 +39,7 @@ async def create_job(job: JobBase):
 async def get_job_by_id(job_id: int):
     try:
         job = await get_job_by_id_service(job_id)
-        return job
+        return custom_response_handler(200, "Job retrieved successfully", job)
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
@@ -50,7 +52,7 @@ async def get_job_by_id(job_id: int):
 async def update_job(job_id: int, job: JobUpdate):
     try:
         job = await update_job_service(job_id, job)
-        return job
+        return custom_response_handler(200, "Job updated successfully", job)
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
@@ -62,7 +64,7 @@ async def update_job(job_id: int, job: JobUpdate):
 async def delete_job(job_id: int):
     try:
         job = await delete_job_service(job_id)
-        return job
+        return custom_response_handler(200, "Job deleted successfully", job)
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
