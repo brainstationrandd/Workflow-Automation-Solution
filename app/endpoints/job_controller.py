@@ -35,9 +35,9 @@ async def create_job(job: JobBase):
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    
 
-@router.get("/{job_id}", response_model=JobBase)
+
+@router.get("/{job_id}")
 async def get_job_by_id(job_id: int):
     try:
         job = await get_job_by_id_service(job_id)
@@ -48,7 +48,20 @@ async def get_job_by_id(job_id: int):
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    
+
+
+@router.get("/user/{user_id}")
+async def get_job_by_user_id(user_id: int):
+    try:
+        job = await get_job_by_user_id_service(user_id)
+        return custom_response_handler(200, "Job retrieved successfully", job)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
 
 @router.put("/{job_id}")
 async def update_job(job_id: int, job: JobUpdate):
