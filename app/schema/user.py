@@ -9,6 +9,10 @@ class UserBase(BaseModel):
     password: str
     password: optional[str] = None
 
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
 class UpdateUser(BaseModel):
     name: optional[str] = None
     email: optional[str] = None

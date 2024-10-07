@@ -10,22 +10,24 @@ from sqlalchemy.orm import joinedload
 
 class UserRepository:
     @staticmethod
-    def get_all_users(db: Session):
+    async def get_all_users():
+        db = SessionLocal()
         try:
-            data = db.query(User)
-            return data
+            user = db.query(User)
+            return user.all()
         except HTTPException as e:
             logger.info(f'An HTTP error occurred: \n {str(e)}')
             raise
 
     @staticmethod
-    def get_user_query(db: Session, skip: int, limit: int):
+    async def get_user_query(db: Session, skip: int, limit: int):
         try:
-            data = db.query(User).offset(skip).limit(limit).all()
-            return data
-        except HTTPException as e:
-            logger.info(f'An HTTP error occurred: \n {str(e)}')
-            raise e
+            return db.query(User).offset(skip).limit(limit).all()
+        except Exception as e:
+            logger.exception("Error in UserRepository.get_all_users")
+            raise
+    
+    
     @staticmethod
     async def get_user_by_id(user_id):
         db = SessionLocal()

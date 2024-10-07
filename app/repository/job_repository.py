@@ -46,6 +46,18 @@ class JobRepository:
             raise e
         finally:
             db.close()
+    
+    @staticmethod
+    async def get_job_by_user_id(user_id: int):
+        db = SessionLocal()
+        try:
+            job = db.query(Job).filter(Job.user_id == user_id).all()
+            return job
+        except HTTPException as e:
+            logger.info(f'An HTTP error occurred: \n {str(e)}')
+            raise e
+        finally:
+            db.close
 
     @staticmethod
     async def update_job(job_id: int, job: JobUpdate):

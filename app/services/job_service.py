@@ -29,6 +29,15 @@ async def get_job_by_id_service(job_id):
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
+
+
+async def get_job_by_user_id_service(user_id):
+    try:
+        job = await JobRepository.get_job_by_user_id(user_id)
+        return job
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
     
 
 async def update_job_service(job_id: int, job: JobUpdate):
