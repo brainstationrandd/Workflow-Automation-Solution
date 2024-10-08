@@ -3,6 +3,7 @@ from app.schema.job import *
 from app.models.job import Job
 from app.repository.job_repository import JobRepository
 from utils.logger import logger
+from sqlalchemy.orm import Session
 
 
 async def get_all_jobs_service():
@@ -30,6 +31,22 @@ async def get_job_by_id_service(job_id):
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
 
+async def get_jobs_with_pagination_service(db: Session, offset: int, limit: int):
+    try:
+        jobs = db.query(Job).offset(offset).limit(limit).all()
+        return jobs
+    except Exception as e:
+        logger.error(f'An error occurred while fetching jobs with pagination: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred while fetching jobs with pagination")
+
+
+async def find_jobs_by_name_service(db: Session, name: str):
+    try:
+        jobs = db.query(Job).filter(Job.name.ilike(f'{name}%')).all()
+        return jobs
+    except Exception as e:
+        logger.error(f'An error occurred while fetching jobs by name: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred while fetching jobs by name")
 
 async def get_job_by_user_id_service(user_id):
     try:

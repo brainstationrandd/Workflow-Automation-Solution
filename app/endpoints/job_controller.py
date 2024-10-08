@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from app.db import get_db
 from app.schema.job import *
 from app.services.job_service import *
@@ -7,6 +7,7 @@ from app.helpers.custom_exception_handler import *
 from utils.logger import logger
 from utils.helper import custom_response_handler
 from app.schema.job import *
+from sqlalchemy.orm import Session
 
 
 
@@ -23,6 +24,40 @@ async def get_all_jobs():
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@router.get("/paginated")
+async def get_jobs_with_pagination(offset: int = Query(0, ge=0), limit: int = Query(10, ge=1), db:Session = Depends(get_db)):
+    """
+    Get jobs with pagination.
+    - offset: The number of items to skip before starting to collect the result set.
+    - limit: The number of items to return.
+    """
+    try:
+        jobs = await get_jobs_with_pagination_service(db, offset, limit)
+        return custom_response_handler(200, "Jobs retrieved successfully", jobs)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+
+@router.get("/search")
+async def find_jobs_by_name(name: str, db: Session = Depends(get_db)):
+    """
+    Find jobs by name (prefix and case insensitive).
+    - name: The prefix of the job name to search for.
+    """
+    try:
+        jobs = await find_jobs_by_name_service(db, name)
+        return custom_response_handler(200, "Jobs retrieved successfully", jobs)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")    
 
 @router.post("/create-job/")
 async def create_job(job: JobBase):

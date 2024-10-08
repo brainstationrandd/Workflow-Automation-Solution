@@ -6,16 +6,20 @@ from app.schema.user import UserBase, UserLogin
 from app.helpers.hash_password import check_password, check_password_for_login
 from utils.logger import logger
 import os
+from app.models.user import User
 
 
 def find_users(db: Session, skip: int, limit: int):
     try:
-        users = UserRepository.get_user_query(db, skip, limit)
+        users = UserRepository.get_user_query(db, skip, limit).all()
         return users
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
-
+    except Exception as e:
+        logger.error(f'An unexpected error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
+    
 def get_user_by_id_service(id: int):
     try:
         user = UserRepository.get_user_by_id(id)
@@ -130,3 +134,12 @@ async def update_user_avater(user_id, avatar):
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
+    
+async def find_users_by_name_service(db: Session, name: str):
+    try:
+        # Perform a case-insensitive prefix search
+        users = db.query(User).filter(User.name.ilike(f'{name}%')).all()
+        return users
+    except Exception as e:
+        logger.error(f"An error occurred while fetching users by name: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching users by name.")
