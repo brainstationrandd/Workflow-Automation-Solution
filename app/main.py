@@ -17,7 +17,11 @@ from app.helpers.custom_exception_handler import validation_exception_handler
 from fastapi.staticfiles import StaticFiles
 
 
+
+
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 from app.endpoints import user_controller
 from app.endpoints import admin_controller

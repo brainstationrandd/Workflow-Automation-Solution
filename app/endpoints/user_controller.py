@@ -4,6 +4,7 @@ from app.schema.user import *
 from app.services.user_service import *
 from app.helpers.custom_exception_handler import *
 from utils.helper import custom_response_handler
+from app.models.user import User
 
 router = APIRouter()
 
@@ -38,6 +39,24 @@ async def get_all_users():
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
+@router.get("/paginated")
+async def get_users_with_pagination(offset: int = Query(0, ge=0), limit: int = Query(10, ge=1), db: Session = Depends(get_db)):
+    """
+    Get users with pagination.
+    - offset: The number of items to skip before starting to collect the result set.
+    - limit: The number of items to return.
+    """
+    try:
+        users = find_users(db, offset, limit)  # Removed await here since it's not async
+        return custom_response_handler(200, "Users retrieved successfully", users)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred: {}".format(str(e)))
+
+    
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -71,3 +90,22 @@ async def delete_user(user_id: int):
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
+
+@router.get("/users/search")
+async def find_users_by_name(
+    name: str ,# Name is required, with at least one character
+    db: Session = Depends(get_db)
+):
+    """
+    Find users by name prefix (case-insensitive).
+    - name: The prefix of the user name to search for.
+    """
+    try:
+        users = await find_users_by_name_service(db, name)
+        return custom_response_handler(200, "Users retrieved successfully", users)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred while searching for users.")

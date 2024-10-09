@@ -20,13 +20,14 @@ class UserRepository:
             raise
 
     @staticmethod
-    async def get_user_query(db: Session, skip: int, limit: int):
+    def get_user_query(db: Session, skip: int, limit: int):
         try:
-            return db.query(User).offset(skip).limit(limit).all()
+            # Check if db.query(User).offset(skip).limit(limit) is returning a list already
+            query = db.query(User).offset(skip).limit(limit)
+            return query  # Ensure this is called on the query object, not a list
         except Exception as e:
-            logger.exception("Error in UserRepository.get_all_users")
-            raise
-    
+            logger.exception("Error in UserRepository.get_user_query")
+            raise HTTPException(status_code=500, detail="Database query error: {}".format(str(e)))
     
     @staticmethod
     async def get_user_by_id(user_id):

@@ -17,6 +17,8 @@ import time
 import hashlib
 from sqlalchemy.orm import Session
 from app.models.document import Document
+import shutil
+static_directory = 'static'
 
 router = APIRouter()
 
@@ -39,6 +41,7 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Sessio
 
     # Create the local directory to store the PDF files if it doesn't exist
     os.makedirs(local_pdf_directory, exist_ok=True)
+    os.makedirs(static_directory, exist_ok=True)  # Create the static folder if it doesn't exist
     
 
     try:
@@ -53,6 +56,10 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Sessio
             async with aiofiles.open(file_path, 'wb') as out_file:
                 content = await file.read()
                 await out_file.write(content)
+                
+            # Copy the file to the static folder
+            static_file_path = os.path.join(static_directory, file_name)
+            shutil.copy(file_path, static_file_path)  # Copy the file to the static directory    
                 
             # Generate the SHA-256 hash of the PDF content
             pdf_hash = hashlib.sha256(content).hexdigest()
@@ -111,6 +118,7 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Sessio
 
 @router.post("/sns-endpoint/")
 async def handle_sns_endpoint(request: Request):
+    logger.info("Received SNS endpoint request.")
     request_data = await request.json()
 
     await handle_sns_subscription_confirmation(request_data)
@@ -122,5 +130,49 @@ async def handle_sns_endpoint(request: Request):
 
 
 
+@router.get("/document/generate-json")
+async def generate_json(db: Session = Depends(get_db)):
+    try:
+        documents = db.query(Document).all()
 
+        base_url = "http://localhost:7705/static"
+        json_structure = {"uploaded_pdfs": {}}
 
+        for doc in documents:
+            # Split the path
+            path_parts = doc.path.split("/")
+            
+            if len(path_parts) < 3:  # Ensure there are at least 3 parts (for category)
+                continue  # Skip this document if the path is invalid or incorrectly formatted
+
+            category = path_parts[2]  # E.g., "SOFTWARE-ENGINEER" or "Business_Analyst"
+            pdf_name = path_parts[-1]  # The file name, e.g., "Tahmid_Rahman_Cv-6_20240905102248.pdf"
+
+            # PDF Link
+            pdf_link = f"{base_url}/{pdf_name}"
+
+            # Initialize categories if they don't exist
+            if category not in json_structure["uploaded_pdfs"]:
+                json_structure["uploaded_pdfs"][category] = []
+
+            # Check if sub-category exists (only for categories with sub-categories)
+            if len(path_parts) > 3:  # Only check for sub-category if it exists
+                sub_category = path_parts[3]  # E.g., "Network"
+
+                # Check if sub-category exists and create the structure if needed
+                sub_category_dict = next((item for item in json_structure["uploaded_pdfs"][category] if sub_category in item), None)
+
+                if not sub_category_dict:
+                    sub_category_dict = {sub_category: []}
+                    json_structure["uploaded_pdfs"][category].append(sub_category_dict)
+
+                # Add the PDF name and link under the sub-category
+                sub_category_dict[sub_category].append({"PDF Name": pdf_name, "PDF Link": pdf_link})
+            else:
+                # If there's no sub-category, add the PDF directly under the category
+                json_structure["uploaded_pdfs"][category].append({"PDF Name": pdf_name, "PDF Link": pdf_link})
+
+        return json_structure
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")

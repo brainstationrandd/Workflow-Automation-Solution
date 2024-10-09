@@ -117,12 +117,21 @@ async def websocket_search(websocket: WebSocket):
             data = await websocket.receive_json()
             query_clauses = []
 
+         # Handle name prefix and exact match
             if "name" in data and data["name"]:
-                query_clauses.append({"prefix": {"name": data["name"]}})
+                name_lower = data["name"].lower()
+                query_clauses.append({
+                    "bool": {
+                        "should": [
+                            {"prefix": {"name": name_lower}},  # Case-insensitive prefix search for name
+                            {"term": {"name.raw": name_lower}}  # Case-insensitive exact match for name
+                        ]
+                    }
+                })
             if "email" in data and data["email"]:
-                query_clauses.append({"prefix": {"email": data["email"]}})
+                query_clauses.append({"prefix": {"email": data["email"].lower()}})  # Case-insensitive prefix search for email
             if "phone" in data and data["phone"]:
-                query_clauses.append({"prefix": {"phone": data["phone"]}})
+                query_clauses.append({"prefix": {"phone": data["phone"].lower()}})  # Case-insensitive prefix search for phone
             if "keywords" in data and data["keywords"]:
                 query_clauses.append({
                     "bool": {
@@ -147,7 +156,7 @@ async def websocket_search(websocket: WebSocket):
                     }
                 })
             if "location" in data and data["location"]:
-                query_clauses.append({"prefix": {"location": data["location"]}})
+                query_clauses.append({"prefix": {"location": data["location"].lower()}})  # Case-insensitive prefix search for location
 
             query = {
                 "bool": {
@@ -161,3 +170,53 @@ async def websocket_search(websocket: WebSocket):
 
     except WebSocketDisconnect:
         print("Client disconnected")
+    # await websocket.accept()
+    # try:
+    #     while True:
+    #         data = await websocket.receive_json()
+    #         query_clauses = []
+
+    #         if "name" in data and data["name"]:
+    #             query_clauses.append({"prefix": {"name": data["name"]}})
+    #         if "email" in data and data["email"]:
+    #             query_clauses.append({"prefix": {"email": data["email"]}})
+    #         if "phone" in data and data["phone"]:
+    #             query_clauses.append({"prefix": {"phone": data["phone"]}})
+    #         if "keywords" in data and data["keywords"]:
+    #             query_clauses.append({
+    #                 "bool": {
+    #                     "should": [{"match": {"keywords": keyword}} for keyword in data["keywords"]],
+    #                     "minimum_should_match": 1
+    #                 }
+    #             })
+    #         if "experience" in data and data["experience"] is not None:
+    #             query_clauses.append({"range": {"experience": {"gte": data["experience"]}}})
+    #         if "education" in data and data["education"]:
+    #             query_clauses.append({
+    #                 "bool": {
+    #                     "should": [{"match": {"education": edu}} for edu in data["education"]],
+    #                     "minimum_should_match": 1
+    #                 }
+    #             })
+    #         if "skills" in data and data["skills"]:
+    #             query_clauses.append({
+    #                 "bool": {
+    #                     "should": [{"match": {"skills": skill}} for skill in data["skills"]],
+    #                     "minimum_should_match": 1
+    #                 }
+    #             })
+    #         if "location" in data and data["location"]:
+    #             query_clauses.append({"prefix": {"location": data["location"]}})
+
+    #         query = {
+    #             "bool": {
+    #                 "must": query_clauses
+    #             }
+    #         }
+
+    #         response = es.search(index='cv_data', body={"query": query})
+    #         results = [hit['_source'] for hit in response['hits']['hits']]
+    #         await websocket.send_json({"results": results})
+
+    # except WebSocketDisconnect:
+    #     print("Client disconnected")
