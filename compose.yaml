@@ -7,6 +7,8 @@ services:
     environment:
       - discovery.type=single-node
       - network.host=0.0.0.0
+    volumes:
+      - esdata:/usr/share/elasticsearch/data  
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
       interval: 10s
@@ -26,7 +28,8 @@ services:
         condition: service_healthy
     environment:
       - ELASTICSEARCH_HOST=elasticsearch
-
+volumes:
+  esdata:
   
     # Optional: Add ES_JAVA_OPTS to configure memory
     #   - ES_JAVA_OPTS=-Xms1g -Xmx1g

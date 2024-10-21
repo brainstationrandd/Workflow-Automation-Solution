@@ -63,4 +63,12 @@ def add_cv_file_to_index(filepath):
             
     except Exception as e:
         logger.error(f"Exception {e} occured while adding CV file  to index")
-        
+
+
+
+def delete_cv_from_index(cv_id):
+    try:
+        es.delete(index='cv_data', id=cv_id)
+        logger.info(f"CV with ID {cv_id} deleted from index")
+    except Exception as e:
+        logger.error(f"Exception {e} occurred while deleting CV with ID {cv_id} from index")        

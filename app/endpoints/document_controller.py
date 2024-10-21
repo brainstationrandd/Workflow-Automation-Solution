@@ -18,6 +18,7 @@ import hashlib
 from sqlalchemy.orm import Session
 from app.models.document import Document
 import shutil
+from app.services.elastic_search_helper import delete_cv_from_index
 static_directory = 'static'
 
 router = APIRouter()
@@ -176,3 +177,51 @@ async def generate_json(db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+    
+
+@router.delete("/document/{document_id}")
+async def delete_document(document_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a document by document ID.
+    - document_id: The ID of the document to delete.
+    """
+    try:
+        # Fetch the file path from the database using the document_id
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        file_path = document.path
+        
+               # Extract the document_id from the file path
+        extracted_document_id = os.path.splitext(os.path.basename(file_path))[0]
+        
+        # print(extracted_document_id)
+
+
+        # Delete the file from the filesystem
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"File {file_path} deleted from filesystem")
+        else:
+            logger.warning(f"File {file_path} not found in filesystem")
+
+        # Delete the document from the Elasticsearch index
+        delete_cv_from_index(extracted_document_id)
+        logger.info(f"Document with ID {extracted_document_id} deleted from Elasticsearch index")
+
+        # Delete the document record from the database
+        db.delete(document)
+        db.commit()
+        logger.info(f"Document with ID {document_id} deleted from database")
+
+        return {"status": "success", "message": f"Document with ID {document_id} deleted successfully"}
+
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.error(f"Exception {e} occurred while deleting document with ID {document_id}")
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")    
+    
