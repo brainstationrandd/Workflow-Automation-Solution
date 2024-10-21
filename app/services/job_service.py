@@ -72,3 +72,23 @@ async def delete_job_service(job_id):
     except HTTPException as e:
         logger.info(f'An HTTP error occurred: \n {str(e)}')
         raise e
+    
+    
+
+async def get_jobs_by_user_id_with_pagination_service(db: Session, user_id: int, offset: int, limit: int):
+    try:
+        jobs = db.query(Job).filter(Job.user_id == user_id).offset(offset).limit(limit).all()
+        return jobs
+    except Exception as e:
+        logger.error(f'An error occurred while fetching jobs by user ID with pagination: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred while fetching jobs by user ID with pagination")    
+    
+    
+
+async def find_jobs_by_user_id_and_name_service(db: Session, user_id: int, name: str):
+    try:
+        jobs = db.query(Job).filter(Job.user_id == user_id, Job.name.ilike(f'{name}%')).all()
+        return jobs
+    except Exception as e:
+        logger.error(f'An error occurred while fetching jobs by user ID and name: \n {str(e)}')
+        raise HTTPException(status_code=500, detail="An error occurred while fetching jobs by user ID and name")    

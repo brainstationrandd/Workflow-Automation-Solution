@@ -96,6 +96,25 @@ async def get_job_by_user_id(user_id: int):
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+
+@router.get("/user/{user_id}/paginated")
+async def get_jobs_by_user_id_with_pagination(user_id: int, offset: int = Query(0, ge=0), limit: int = Query(10, ge=1), db: Session = Depends(get_db)):
+    """
+    Get paginated jobs for a specific user by user ID.
+    - user_id: The ID of the user.
+    - offset: The number of items to skip before starting to collect the result set.
+    - limit: The number of items to return.
+    """
+    try:
+        jobs = await get_jobs_by_user_id_with_pagination_service(db, user_id, offset, limit)
+        return custom_response_handler(200, "Jobs retrieved successfully", jobs)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")    
 
 
 @router.put("/{job_id}")
@@ -121,3 +140,23 @@ async def delete_job(job_id: int):
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+    
+ 
+ 
+@router.get("/user/{user_id}/search")
+async def find_jobs_by_user_id_and_name(user_id: int, name: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+    """
+    Find jobs by name for a specific user (prefix and case insensitive).
+    - user_id: The ID of the user.
+    - name: The prefix of the job name to search for.
+    """
+    try:
+        jobs = await find_jobs_by_user_id_and_name_service(db, user_id, name)
+        return custom_response_handler(200, "Jobs retrieved successfully", jobs)
+    except HTTPException as e:
+        logger.info(f'An HTTP error occurred: \n {str(e)}')
+        raise e
+    except Exception as e:
+        logger.info(f'An error occurred: \n {str(e)}')
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")   
