@@ -1,4 +1,99 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+# from fastapi import FastAPI, APIRouter, HTTPException
+# from pydantic import BaseModel
+# from typing import List
+# import os
+# import json
+# import datetime
+# from prompt.review_sort_prompt import sort_review_chain
+# from langchain_community.document_loaders import PyPDFLoader
+# router = APIRouter()
+
+# # Assuming sort_json_data_based_on_score_desc is a function that sorts JSON data based on score
+# def sort_json_data_based_on_score_desc(data):
+#     return sorted(data, key=lambda x: x['match_percentage'], reverse=True)
+
+
+# from fastapi import APIRouter, HTTPException, Depends
+# from sqlalchemy.orm import Session
+# from typing import List
+# from app.models.document import Document  # Replace with actual import path
+# from app.db import get_db  # Replace with actual import path
+# from utils.logger import logger
+# from langchain_community.document_loaders import PyPDFLoader
+# import os, json, datetime
+
+# router = APIRouter()
+
+# class ProcessCVRequest(BaseModel):
+#     job_id: int
+#     job_desc: str
+#     weight_skills: int
+#     weight_experience: int
+#     weight_education: int
+#     weight_keywords: int
+#     weight_accomplishments: int
+
+# class CVData(BaseModel):
+#     id: str
+#     match_percentage: float
+#     strengths: List[str]
+#     weaknesses: List[str]
+#     created_at: str
+
+# @router.post("/process-cvs/", response_model=List[CVData])
+# async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
+#     job_id = request.job_id
+#     job_desc = request.job_desc
+#     weight_skills = request.weight_skills
+#     weight_experience = request.weight_experience
+#     weight_education = request.weight_education
+#     weight_keywords = request.weight_keywords
+#     weight_accomplishments = request.weight_accomplishments
+
+#     # Retrieve file paths from the document table using job_id
+#     documents = db.query(Document).filter(Document.job_id == job_id).all()
+    
+#     if not documents:
+#         raise HTTPException(status_code=404, detail="No documents found for the given job_id")
+#     print("Documents found:", documents)
+#      # Ensure file paths are correctly prefixed with the current working directory if they are relative paths
+#     files=[]
+#     files = [os.path.join('./', document.path) for document in documents]
+
+#     json_data = []
+#     batch_size = 10  # Adjust batch size as needed
+
+#     for i in range(0, len(files), batch_size):
+#         batch_text = []
+#         batch_files = files[i:i+batch_size]
+#         batch_ids = []
+
+#         for file in batch_files:
+#             loader = PyPDFLoader(file)
+#             docs = loader.load()
+#             page_content = "\n\n".join(doc.page_content for doc in docs)
+#             batch_text.append({"cv_text": page_content, "job_desc": job_desc,"weight_skills": weight_skills,"weight_experience": weight_experience,"weight_education": weight_education,"weight_keywords": weight_keywords,"weight_accomplishments": weight_accomplishments})
+#             batch_ids.append(os.path.splitext(os.path.basename(file))[0])  # Append the file name without extension
+
+#         # Call the batch method without await if it is not asynchronous
+#         ans = sort_review_chain.batch(batch_text)
+        
+     
+
+#         for j in range(len(ans)):
+#             convert_ans = json.loads(ans[j])
+#             convert_ans['id'] = batch_ids[j]
+#             convert_ans['created_at'] = datetime.datetime.now().isoformat()
+#             json_data.append(convert_ans)
+    
+#     print("JSON data:", json_data)        
+
+#     sorted_data = sort_json_data_based_on_score_desc(json_data)
+
+#     return sorted_data
+
+
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 import os
@@ -6,33 +101,56 @@ import json
 import datetime
 from prompt.review_sort_prompt import sort_review_chain
 from langchain_community.document_loaders import PyPDFLoader
+from sqlalchemy.orm import Session
+from app.models.document import Document  # Replace with actual import path
+from app.db import get_db  # Replace with actual import path
+from utils.logger import logger
+
 router = APIRouter()
 
 # Assuming sort_json_data_based_on_score_desc is a function that sorts JSON data based on score
 def sort_json_data_based_on_score_desc(data):
-    return sorted(data, key=lambda x: x['score'], reverse=True)
+    return sorted(data, key=lambda x: x['match_percentage'], reverse=True)
 
-# Define a Pydantic model for the request
 class ProcessCVRequest(BaseModel):
-    folder_path: str
+    job_id: int
     job_desc: str
+    weight_skills: int
+    weight_experience: int
+    weight_education: int
+    weight_keywords: int
+    weight_accomplishments: int
+    num_of_applicants: int
 
-# Define a Pydantic model for the response
 class CVData(BaseModel):
     id: str
-    score: float
-    remarks: List[str]
+    match_percentage: float
+    strengths: List[str]
+    weaknesses: List[str]
     created_at: str
+    category: str
 
 @router.post("/process-cvs/", response_model=List[CVData])
-async def process_cvs(request: ProcessCVRequest):
-    folder_path = request.folder_path
+async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
+    job_id = request.job_id
     job_desc = request.job_desc
+    weight_skills = request.weight_skills
+    weight_experience = request.weight_experience
+    weight_education = request.weight_education
+    weight_keywords = request.weight_keywords
+    weight_accomplishments = request.weight_accomplishments
+    num_of_applicants = request.num_of_applicants
 
-    if not os.path.isdir(folder_path):
-        raise HTTPException(status_code=400, detail="Invalid folder path")
+    # Retrieve file paths from the document table using job_id
+    documents = db.query(Document).filter(Document.job_id == job_id).all()
+    
+    if not documents:
+        raise HTTPException(status_code=404, detail="No documents found for the given job_id")
+    print("Documents found:", documents)
+    
+    # Ensure file paths are correctly prefixed with the current working directory if they are relative paths
+    files = [os.path.join('./', document.path) for document in documents]
 
-    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(".pdf")]
     json_data = []
     batch_size = 10  # Adjust batch size as needed
 
@@ -45,8 +163,16 @@ async def process_cvs(request: ProcessCVRequest):
             loader = PyPDFLoader(file)
             docs = loader.load()
             page_content = "\n\n".join(doc.page_content for doc in docs)
-            batch_text.append({"cv_text": page_content, "job_desc": job_desc})
-            batch_ids.append(file)  # Append the path of the file
+            batch_text.append({
+                "cv_text": page_content, 
+                "job_desc": job_desc,
+                "weight_skills": weight_skills,
+                "weight_experience": weight_experience,
+                "weight_education": weight_education,
+                "weight_keywords": weight_keywords,
+                "weight_accomplishments": weight_accomplishments
+            })
+            batch_ids.append(os.path.splitext(os.path.basename(file))[0])  # Append the file name without extension
 
         # Call the batch method without await if it is not asynchronous
         ans = sort_review_chain.batch(batch_text)
@@ -56,7 +182,22 @@ async def process_cvs(request: ProcessCVRequest):
             convert_ans['id'] = batch_ids[j]
             convert_ans['created_at'] = datetime.datetime.now().isoformat()
             json_data.append(convert_ans)
+    
+    print("JSON data:", json_data)        
 
     sorted_data = sort_json_data_based_on_score_desc(json_data)
+
+    # Categorize the applicants based on the num_of_applicants
+    num_best_match = int(num_of_applicants * 0.2)
+    num_medium_match = int(num_of_applicants * 0.3)
+    num_low_match = num_of_applicants - num_best_match - num_medium_match
+
+    for i, data in enumerate(sorted_data):
+        if i < num_best_match:
+            data['category'] = 'Best Match'
+        elif i < num_best_match + num_medium_match:
+            data['category'] = 'Medium Match'
+        else:
+            data['category'] = 'Low Match'
 
     return sorted_data
