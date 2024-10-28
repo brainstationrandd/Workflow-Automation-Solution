@@ -110,14 +110,20 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
 
 
 
-# New endpoint to retrieve all job names for a specific user
-@router.get("/user/{user_id}/jobs", response_model=List[str])
+
+# New endpoint to retrieve all job details for a specific user
+class JobData(BaseModel):
+    job_id: int
+    name: str
+    description: str
+
+@router.get("/user/{user_id}/jobs", response_model=List[JobData])
 async def get_jobs_by_user_id(user_id: int, db: Session = Depends(get_db)):
     jobs = db.query(Job).filter(Job.user_id == user_id).all()
     
-    # if not jobs:
-    #     raise HTTPException(status_code=404, detail="No jobs found for the given user_id")
+    if not jobs:
+        raise HTTPException(status_code=404, detail="No jobs found for the given user_id")
     
-    job_names = [job.name for job in jobs]
+    job_details = [{"job_id": job.id, "name": job.name, "description": job.description} for job in jobs]
     
-    return job_names
+    return job_details
