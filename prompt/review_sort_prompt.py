@@ -48,6 +48,10 @@ sort_review_prompt = """
 Act as an Expert in HR and Recruitment.
 You will be given a CV text, a job description, and integer weights for scoring parameters. Your task is to evaluate the CV based on these parameters and provide a match percentage out of 100%, considering the weight of each parameter. Additionally, provide a detailed review explaining why the given match percentage was awarded.
 
+-Strictly be a professional and provide constructive feedback based on the evaluation criteria.
+-Be specific in your analysis and provide clear reasoning for the match percentage.
+-Be strict in your evaluation and consider all aspects of the CV and job description.
+
 Each parameter will be weighted, contributing to the final match percentage as follows:
 
 1. **Skill Relevance** (Weight: {weight_skills}): Assess how well the candidate’s skills match the job description.
@@ -65,7 +69,7 @@ Job Description: {job_desc}
 After evaluating the CV based on the job description and weighted parameters, strictly provide the output in the following JSON format:
 
 {{
-  "match_percentage": "85",
+  "match_percentage": "X",
   "strengths": [
     "The candidate's skills closely align with the job requirements, especially in Python programming and data analysis.",
     "The candidate has 5 years of relevant experience, which is a good match for the job role.",

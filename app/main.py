@@ -32,6 +32,7 @@ from app.endpoints import job_controller
 from app.endpoints import elastic_search_controller
 from app.endpoints import sort_and_review_controler
 from app.endpoints import notification_controller
+from app.endpoints import email_controller
 
 sessions = {}
 
@@ -57,6 +58,7 @@ app.include_router(job_controller.router, prefix="/api/job", tags=["Job"])
 app.include_router(elastic_search_controller.router, prefix="/api/elastic_search", tags=["ElasticSearch"])
 app.include_router(sort_and_review_controler.router, prefix="/api/sort_and_review", tags=["SortAndReview"])
 app.include_router(notification_controller.router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(email_controller.router, prefix="/api/email", tags=["Email"])
 
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
