@@ -6,6 +6,7 @@ from app.helpers.custom_exception_handler import *
 from utils.helper import custom_response_handler
 import aiofiles
 import uuid
+from app.models.job import Job  
 from app.repository.document_repository import DocumentRepository
 from datetime import datetime
 from app.config import l1_model_arn, l1_bucket_name, local_pdf_directory
@@ -18,7 +19,9 @@ import hashlib
 from sqlalchemy.orm import Session
 from app.models.document import Document
 import shutil
+from app.services.job_applications_service import store_job_application
 from app.services.elastic_search_helper import delete_cv_from_index
+from app.endpoints.email_controller import send_email
 static_directory = 'static'
 
 router = APIRouter()
@@ -38,13 +41,19 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Session = Depends(get_db)):
+async def upload_pdf(email:str,job_id: int, files: list[UploadFile] = File(...),db: Session = Depends(get_db)):
 
     # Create the local directory to store the PDF files if it doesn't exist
     os.makedirs(local_pdf_directory, exist_ok=True)
     os.makedirs(static_directory, exist_ok=True)  # Create the static folder if it doesn't exist
     
-
+    Job_info=db.query(Job).filter_by(id=job_id).first()
+    if not Job_info:
+        raise HTTPException(status_code=404, detail="Job not found")
+    try:
+        send_email("nabibpallab22@gmail.com",email,Job_info.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}") 
     try:
         for file in files:
             # Get the original filename and create a new filename with a timestamp
@@ -60,6 +69,7 @@ async def upload_pdf(job_id: int, files: list[UploadFile] = File(...),db: Sessio
                 
             # Copy the file to the static folder
             static_file_path = os.path.join(static_directory, file_name)
+            store_job_application(job_id, file_name, email, db)
             shutil.copy(file_path, static_file_path)  # Copy the file to the static directory    
                 
             # Generate the SHA-256 hash of the PDF content

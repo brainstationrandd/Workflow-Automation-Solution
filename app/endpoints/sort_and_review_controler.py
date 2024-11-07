@@ -11,7 +11,7 @@ from app.models.job import Job  # Replace with actual import path
 from app.models.document import Document  # Replace with actual import path
 from app.db import get_db  # Replace with actual import path
 from utils.logger import logger
-
+from app.services.job_applications_service import store_job_application, get_all_job_application_by_job_id
 router = APIRouter()
 
 # Assuming sort_json_data_based_on_score_desc is a function that sorts JSON data based on score
@@ -35,6 +35,7 @@ class CVData(BaseModel):
     weaknesses: List[str]
     created_at: str
     category: str
+    email:str
 
 @router.post("/process-cvs/", response_model=List[CVData])
 async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
@@ -46,7 +47,13 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
     weight_keywords = request.weight_keywords
     weight_accomplishments = request.weight_accomplishments
     num_of_applicants = request.num_of_applicants
-
+    
+    # get all files for the job_id and the Email of the applicant 
+    job_applicants=get_all_job_application_by_job_id(job_id, db)
+    
+    for job_app in job_applicants:
+        print(job_app.path_cv)
+ 
     # Retrieve file paths from the document table using job_id
     documents = db.query(Document).filter(Document.job_id == job_id).all()
     
@@ -56,7 +63,15 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
     
     # Ensure file paths are correctly prefixed with the current working directory if they are relative paths
     files = [os.path.join('./', document.path) for document in documents]
-
+    
+    emails = []
+    #extract last part from files 
+    for file in files:
+        for job_app in job_applicants:
+            if job_app.path_cv in file:
+                emails.append(job_app.email)
+        
+        
     json_data = []
     batch_size = 10  # Adjust batch size as needed
 
@@ -86,28 +101,23 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
         for j in range(len(ans)):
             convert_ans = json.loads(ans[j])
             convert_ans['id'] = batch_ids[j]
+            convert_ans['email'] = emails[j]
             convert_ans['created_at'] = datetime.datetime.now().isoformat()
             json_data.append(convert_ans)
     
     print("JSON data:", json_data)        
 
     sorted_data = sort_json_data_based_on_score_desc(json_data)
-
-    # Categorize the applicants based on the num_of_applicants
-    num_best_match = int(num_of_applicants * 0.2)
-    num_medium_match = int(num_of_applicants * 0.3)
-    num_low_match = num_of_applicants - num_best_match - num_medium_match
-
-    for i, data in enumerate(sorted_data):
-        if i < num_best_match:
+    # Categorize the applicants based on match_percentage
+    for data in sorted_data:
+        if float(data['match_percentage']) >= 85:
             data['category'] = 'Best Match'
-        elif i < num_best_match + num_medium_match:
+        elif 75 <= float(data['match_percentage']) < 85:
             data['category'] = 'Medium Match'
         else:
             data['category'] = 'Low Match'
 
     return sorted_data
-
 
 
 
