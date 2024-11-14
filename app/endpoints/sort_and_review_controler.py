@@ -81,7 +81,10 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
         batch_ids = []
 
         for file in batch_files:
-            loader = PyPDFLoader(file)
+            file_base = os.path.basename(file)
+            get_file_from_static = os.path.join('./static/',file_base)
+            print("File path:", get_file_from_static)
+            loader = PyPDFLoader(get_file_from_static)
             docs = loader.load()
             page_content = "\n\n".join(doc.page_content for doc in docs)
             batch_text.append({
@@ -105,8 +108,8 @@ async def process_cvs(request: ProcessCVRequest, db: Session = Depends(get_db)):
             convert_ans['created_at'] = datetime.datetime.now().isoformat()
             json_data.append(convert_ans)
     
-    print("JSON data:", json_data)        
-
+    print("JSON data:", json_data) 
+    
     sorted_data = sort_json_data_based_on_score_desc(json_data)
     # Categorize the applicants based on match_percentage
     for data in sorted_data:

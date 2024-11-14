@@ -160,3 +160,14 @@ async def find_jobs_by_user_id_and_name(user_id: int, name: str = Query(..., min
     except Exception as e:
         logger.info(f'An error occurred: \n {str(e)}')
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")   
+
+@router.get("/jobs/status/{status}")
+async def get_jobs_by_status(status: str, db: Session = Depends(get_db)):
+    try:
+        jobs = db.query(Job).filter(Job.status == status).all()
+        if not jobs:
+            raise HTTPException(status_code=404, detail=f"No jobs found with status {status}")
+        return jobs
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="Failed to fetch jobs by status")
