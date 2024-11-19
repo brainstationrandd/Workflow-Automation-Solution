@@ -33,7 +33,8 @@ from app.endpoints import elastic_search_controller
 from app.endpoints import sort_and_review_controler
 from app.endpoints import notification_controller
 from app.endpoints import email_controller
-
+from app.endpoints import cv_applications_controller
+from app.endpoints import interview_progress_controller
 sessions = {}
 
 origins = ["*"]
@@ -59,6 +60,8 @@ app.include_router(elastic_search_controller.router, prefix="/api/elastic_search
 app.include_router(sort_and_review_controler.router, prefix="/api/sort_and_review", tags=["SortAndReview"])
 app.include_router(notification_controller.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(email_controller.router, prefix="/api/email", tags=["Email"])
+app.include_router(cv_applications_controller.router, prefix="/api/cv_applications", tags=["CVApplications"])
+app.include_router(interview_progress_controller.router, prefix="/api/interview_progress", tags=["InterviewProgress"])
 
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

@@ -171,3 +171,29 @@ async def get_jobs_by_status(status: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.info(f'An error occurred: {str(e)}')
         raise HTTPException(status_code=500, detail="Failed to fetch jobs by status")
+    
+    
+@router.get("/jobs/user/{user_id}/status/{status}") 
+async def get_jobs_by_user_id_and_status(user_id: int, status: str, db: Session = Depends(get_db)):
+    try:
+        jobs = db.query(Job).filter(Job.user_id == user_id, Job.status == status).all()
+        if not jobs:
+            raise HTTPException(status_code=404, detail=f"No jobs found with status {status} for user {user_id}")
+        return jobs
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="Failed to fetch jobs by status and user ID")   
+    
+    
+@router.get("/jobs/all")
+async def get_all_job_id_and_name(db: Session = Depends(get_db)):
+    try:
+        jobs = db.query(Job.id, Job.name).all()
+        if not jobs:
+            raise HTTPException(status_code=404, detail=f"No jobs found")
+        jobs_list = [{"id": job.id, "name": job.name} for job in jobs]
+        return jobs_list
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="Failed to fetch jobs by status")
+        

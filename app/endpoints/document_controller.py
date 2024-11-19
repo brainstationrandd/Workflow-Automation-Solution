@@ -22,6 +22,9 @@ import shutil
 from app.services.job_applications_service import store_job_application
 from app.services.elastic_search_helper import delete_cv_from_index
 from app.endpoints.email_controller import send_email
+from pathlib import Path
+import uuid
+from utils.background_tasks import process_files_in_background
 static_directory = 'static'
 
 router = APIRouter()
@@ -41,90 +44,119 @@ async def get_doc_by_id(document_id: int):
 
 
 @router.post("/upload-pdfs/")
-async def upload_pdf(email:str,job_id: int, files: list[UploadFile] = File(...),db: Session = Depends(get_db)):
+async def upload_pdf(email:str,job_id: int, files: list[UploadFile] = File(...),db: Session = Depends(get_db),background_tasks: BackgroundTasks = BackgroundTasks()):
+    save_directory = Path(f"./static")
+    save_directory.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
 
-    # Create the local directory to store the PDF files if it doesn't exist
-    os.makedirs(local_pdf_directory, exist_ok=True)
-    os.makedirs(static_directory, exist_ok=True)  # Create the static folder if it doesn't exist
+    saved_files = []
+
+    for file in files:
+        if file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+        # Generate a unique filename
+        unique_id = uuid.uuid4()
+        file_extension = Path(file.filename)
+        safe_filename = f"{job_id}_{unique_id}_{file_extension}"
+
+        # Construct the path where the file will be saved
+        save_path = save_directory / safe_filename
+
+        # Save the file
+        with save_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Store the saved file's relative path
+        saved_files.append(str(save_path))
+
+        # Optionally, add database logic here to associate the file with a record
+        # Example: Insert a record into `cv_applications` (requires additional logic)
+    background_tasks.add_task(process_files_in_background, save_path, email, job_id, db,background_tasks)    
+
+    return {"message": "Files uploaded successfully", "saved_files": saved_files}
+
+    # # Create the local directory to store the PDF files if it doesn't exist
+    # os.makedirs(local_pdf_directory, exist_ok=True)
+    # os.makedirs(static_directory, exist_ok=True)  # Create the static folder if it doesn't exist
     
-    Job_info=db.query(Job).filter_by(id=job_id).first()
-    if not Job_info:
-        raise HTTPException(status_code=404, detail="Job not found")
-    try:
-        send_email("nabibpallab22@gmail.com",email,Job_info.name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}") 
-    try:
-        for file in files:
-            # Get the original filename and create a new filename with a timestamp
-            original_filename = file.filename
-            name, ext = os.path.splitext(original_filename)
-            file_name = f"{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}"
-            file_path = os.path.join(local_pdf_directory, file_name)
+    # Job_info=db.query(Job).filter_by(id=job_id).first()
+    # if not Job_info:
+    #     raise HTTPException(status_code=404, detail="Job not found")
+    # try:
+    #     send_email("nabibpallab22@gmail.com",email,Job_info.name)
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}") 
+    # try:
+    #     for file in files:
+    #         # Get the original filename and create a new filename with a timestamp
+    #         original_filename = file.filename
+    #         name, ext = os.path.splitext(original_filename)
+    #         file_name = f"{name}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{ext}"
+    #         file_path = os.path.join(local_pdf_directory, file_name)
 
-            # Write the file to the local directory
-            async with aiofiles.open(file_path, 'wb') as out_file:
-                content = await file.read()
-                await out_file.write(content)
+    #         # Write the file to the local directory
+    #         async with aiofiles.open(file_path, 'wb') as out_file:
+    #             content = await file.read()
+    #             await out_file.write(content)
                 
-            # Copy the file to the static folder
-            static_file_path = os.path.join(static_directory, file_name)
-            store_job_application(job_id, file_name, email, db)
-            shutil.copy(file_path, static_file_path)  # Copy the file to the static directory    
+    #         # Copy the file to the static folder
+    #         static_file_path = os.path.join(static_directory, file_name)
+    #         store_job_application(job_id, file_name, email, db)
+    #         shutil.copy(file_path, static_file_path)  # Copy the file to the static directory    
                 
-            # Generate the SHA-256 hash of the PDF content
-            pdf_hash = hashlib.sha256(content).hexdigest()
+    #         # Generate the SHA-256 hash of the PDF content
+    #         pdf_hash = hashlib.sha256(content).hexdigest()
             
-            # Check if the document with the same hash already exists in the database
-            existing_doc = db.query(Document).filter_by(pdf_hash=pdf_hash).first() 
+    #         # Check if the document with the same hash already exists in the database
+    #         existing_doc = db.query(Document).filter_by(pdf_hash=pdf_hash).first() 
             
-            if existing_doc:
-                # If the document already exists, update the job_id and skip classification
-                existing_doc.job_id = job_id
-                existing_doc.updated_at = datetime.utcnow()
-                db.commit()
-                logger.info(f"PDF {original_filename} already classified, skipping classification.")
-                continue   
+    #         if existing_doc:
+    #             # If the document already exists, update the job_id and skip classification
+    #             existing_doc.job_id = job_id
+    #             existing_doc.updated_at = datetime.utcnow()
+    #             db.commit()
+    #             logger.info(f"PDF {original_filename} already classified, skipping classification.")
+    #             continue   
 
-            # Create a new document in the database
-            doc = DocumentBase(
-                path=file_path,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-                summary="",
-                category="",
-                sub_category="",
-                classification_status="IN PROGRESS",
-                comprehend_job_id="",
-                job_id = job_id,
-                pdf_hash=pdf_hash
-            )
+    #         # Create a new document in the database
+    #         doc = DocumentBase(
+    #             path=file_path,
+    #             created_at=datetime.utcnow(),
+    #             updated_at=datetime.utcnow(),
+    #             summary="",
+    #             category="",
+    #             sub_category="",
+    #             classification_status="IN PROGRESS",
+    #             comprehend_job_id="",
+    #             job_id = job_id,
+    #             pdf_hash=pdf_hash
+    #         )
 
-            # Create a DocumentWithMetadata object to be used for classification
-            doc_w_metadata = DocumentWithMetadata(
-                bucket_name=l1_bucket_name,
-                model_arn=l1_model_arn,
-                document=doc,
-                file_name=file_name,
-                local_output_path=f"data/s3_output_zips/{file_name}",
-            )
+    #         # Create a DocumentWithMetadata object to be used for classification
+    #         doc_w_metadata = DocumentWithMetadata(
+    #             bucket_name=l1_bucket_name,
+    #             model_arn=l1_model_arn,
+    #             document=doc,
+    #             file_name=file_name,
+    #             local_output_path=f"data/s3_output_zips/{file_name}",
+    #         )
 
-            # Trigger the classification process
-            job_id = classify_pdf(doc_w_metadata)
-            doc.comprehend_job_id = job_id
-            DocumentRepository.add_file(doc)
+    #         # Trigger the classification process
+    #         job_id = classify_pdf(doc_w_metadata)
+    #         doc.comprehend_job_id = job_id
+    #         DocumentRepository.add_file(doc)
 
-        # Log the successful upload and classification
-        logger.info("PDF files uploaded successfully and classification started.")
-        return {"message": "PDF files uploaded successfully and classification started."}
-    except HTTPException as e:
-        # Log any HTTP errors
-        logger.info(f'An HTTP error occurred: \n {str(e)}')
-        raise e
-    except Exception as e:
-        # Log any errors
-        logger.info(f'An error occurred: \n {str(e)}')
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    #     # Log the successful upload and classification
+    #     logger.info("PDF files uploaded successfully and classification started.")
+    #     return {"message": "PDF files uploaded successfully and classification started."}
+    # except HTTPException as e:
+    #     # Log any HTTP errors
+    #     logger.info(f'An HTTP error occurred: \n {str(e)}')
+    #     raise e
+    # except Exception as e:
+    #     # Log any errors
+    #     logger.info(f'An error occurred: \n {str(e)}')
+    #     raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
     
 
 @router.post("/sns-endpoint/")
