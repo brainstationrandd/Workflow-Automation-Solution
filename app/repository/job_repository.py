@@ -14,7 +14,7 @@ class JobRepository:
     def get_all_jobs() -> List[Job]:
         try:
             with SessionLocal() as db:
-                jobs = db.query(Job).all()
+                jobs = db.query(Job).filter(Job.ended == False).all()
                 return jobs
         except Exception as e:
             logger.info(f'An error occurred: {str(e)}')
@@ -37,8 +37,7 @@ class JobRepository:
     def get_job_by_id(job_id: int) -> Job:
         try:
             with SessionLocal() as db:
-                job = db.query(Job).filter(Job.id == job_id).first()
-                print(job)
+                job = db.query(Job).filter(Job.id == job_id, Job.ended == False).first()
                 if not job:
                     raise HTTPException(status_code=404, detail="Job not found")
                 return job
@@ -50,7 +49,7 @@ class JobRepository:
     def get_job_by_user_id(user_id: int) -> List[Job]:
         try:
             with SessionLocal() as db:
-                jobs = db.query(Job).filter(Job.user_id == user_id).all()
+                jobs = db.query(Job).filter(Job.user_id == user_id, Job.ended == False).all()
                 return jobs
         except Exception as e:
             logger.info(f'An error occurred: {str(e)}')
@@ -60,7 +59,7 @@ class JobRepository:
     def update_job(job_id: int, job: JobUpdate) -> Job:
         try:
             with SessionLocal() as db:
-                db_job = db.query(Job).filter(Job.id == job_id).first()
+                db_job = db.query(Job).filter(Job.id == job_id, Job.ended == False).first()
                 if not db_job:
                     raise HTTPException(status_code=404, detail="Job not found")
                 
@@ -85,7 +84,7 @@ class JobRepository:
     def delete_job(job_id: int) -> Job:
         try:
             with SessionLocal() as db:
-                db_job = db.query(Job).filter(Job.id == job_id).first()
+                db_job = db.query(Job).filter(Job.id == job_id, Job.ended == False).first()
                 if not db_job:
                     raise HTTPException(status_code=404, detail="Job not found")
 
@@ -111,9 +110,10 @@ class JobRepository:
     def get_email_by_job_id(job_id: int) -> str:
         try:
             with SessionLocal() as db:
-                user_email = db.query(User.email).join(Job, User.id == Job.user_id).filter(Job.id == job_id).first()
+                user_email = db.query(User.email).join(Job, User.id == Job.user_id).filter(Job.id == job_id, Job.ended == False).first()
                 if not user_email:
                     raise HTTPException(status_code=404, detail="User not found for the job")
+                return user_email[0]
                 return user_email[0]
         except Exception as e:
             logger.info(f'An error occurred: {str(e)}')

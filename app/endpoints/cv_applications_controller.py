@@ -149,8 +149,6 @@ def get_job_applications(db: Session = Depends(get_db)):
                 job j
             JOIN
                 cv_applications c ON j.id = c.job_id
-            WHERE
-                c.current_category != 'shortlisted'
             ORDER BY
                 j.status, j.name, c.current_category,c.created_at DESC;
         """)).fetchall()
@@ -170,7 +168,8 @@ def get_job_applications(db: Session = Depends(get_db)):
                     "best_match": [],
                     "medium_match": [],
                     "low_match": [],
-                    "miscellaneous": []
+                    "miscellaneous": [],
+                    "shortlisted": [],
                 }
                 
             # Append application details to the relevant category

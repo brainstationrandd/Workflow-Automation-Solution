@@ -7,6 +7,7 @@ from app.db import get_db  # Replace with actual import path
 from app.schema.interview_progress import InterviewProgressCreate, InterviewProgressUpdate  # Replace with actual import path
 from utils.logger import logger
 from sqlalchemy.sql import text
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -143,4 +144,65 @@ def get_job_applications_with_interviews_flat(job_id: int, db: Session = Depends
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    
+
+class UpdateNotes(BaseModel):
+    notes: str
+    application_id: UUID
+
+@router.post("/notes")
+def append_notes_by_application_id(updatenote:UpdateNotes, db: Session = Depends(get_db)):
+    """
+    Append notes to the interview progress entry for a specific application ID.
+    """
+    try:
+        notes = updatenote.notes
+        application_id = updatenote.application_id
+        # Fetch the interview progress entry for the application
+        interview_progress = db.query(InterviewProgress).filter(InterviewProgress.application_id == application_id).first()
+        if not interview_progress:
+            raise HTTPException(status_code=404, detail="Interview progress not found")
+
+        # Append the new notes to the existing notes
+        interview_progress.notes = f"{notes}"
+        db.commit()
+        db.refresh(interview_progress)
+        return interview_progress
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to append notes: {str(e)}")
+def stage_update(stage: str, application_id: UUID, scheduled_date: str, db: Session):
+    """
+    Update the interview stage and scheduled date for a specific application ID.
+    """
+     # Format the local date to store in the database (as ISO format without timezone info)
+    formatted_date = scheduled_date.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Debug: Print formatted_date before saving
+    print("Formatted scheduled_date_local for database:", formatted_date)
+        
+    # Fetch the interview progress entry for the application
+    interview_progress = db.query(InterviewProgress).filter(InterviewProgress.application_id == application_id).first()
+    if not interview_progress:
+        raise HTTPException(status_code=404, detail="Interview progress not found")
+
+    # Update the interview stage and scheduled date
+    interview_progress.stage = stage
+    interview_progress.scheduled_date = formatted_date
+    db.commit()
+    db.refresh(interview_progress)
+    return interview_progress
+
+def append_note_by_appication_uuid(notes: str, application_id: UUID, db: Session):
+    """
+    Append notes to the interview progress entry for a specific application ID.
+    """
+    # Fetch the interview progress entry for the application
+    interview_progress = db.query(InterviewProgress).filter(InterviewProgress.application_id == application_id).first()
+    if not interview_progress:
+        raise HTTPException(status_code=404, detail="Interview progress not found")
+
+    # Append the new notes to the existing notes
+    interview_progress.notes+=f"\n{notes}"
+    db.commit()
+    db.refresh(interview_progress)
+    return interview_progress

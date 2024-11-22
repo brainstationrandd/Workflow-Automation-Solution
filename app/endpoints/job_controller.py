@@ -8,6 +8,7 @@ from utils.logger import logger
 from utils.helper import custom_response_handler
 from app.schema.job import *
 from sqlalchemy.orm import Session
+import time
 
 
 
@@ -188,7 +189,7 @@ async def get_jobs_by_user_id_and_status(user_id: int, status: str, db: Session 
 @router.get("/jobs/all")
 async def get_all_job_id_and_name(db: Session = Depends(get_db)):
     try:
-        jobs = db.query(Job.id, Job.name).all()
+        jobs = db.query(Job.id, Job.name).filter(Job.ended == False).all()
         if not jobs:
             raise HTTPException(status_code=404, detail=f"No jobs found")
         jobs_list = [{"id": job.id, "name": job.name} for job in jobs]
@@ -196,4 +197,37 @@ async def get_all_job_id_and_name(db: Session = Depends(get_db)):
     except Exception as e:
         logger.info(f'An error occurred: {str(e)}')
         raise HTTPException(status_code=500, detail="Failed to fetch jobs by status")
+
+@router.get("/jobs/all_active_and_archived")
+async def get_all_job_id_and_name(db: Session = Depends(get_db)):
+    try:
+        jobs = db.query(Job.id, Job.name,Job.description).all()
+        if not jobs:
+            raise HTTPException(status_code=404, detail=f"No jobs found")
+        jobs_list = [{"id": job.id, "name": job.name,"description":job.description} for job in jobs]
+        return jobs_list
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="Failed to fetch jobs by status")    
+    
+    
         
+@router.post("/complete/{job_id}")
+async def complete_job(job_id: int, db: Session = Depends(get_db)):
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Create a human-readable timestamp in Bangladesh local time (UTC+6)
+        timestamp = time.strftime("%B %d, %Y at %I:%M %p", time.gmtime(time.time() + 6*3600))
+        # Append human-readable timestamp to job name
+        job.name = f"{job.name} (Completed on {timestamp})"
+        
+        job.ended = True
+        job.status = "archived"
+        db.commit()
+        return job
+    except Exception as e:
+        logger.info(f'An error occurred: {str(e)}')
+        raise HTTPException(status_code=500, detail="Failed to complete job")

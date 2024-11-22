@@ -134,7 +134,7 @@ async def get_job_by_id_service(job_id: int):
 
 async def get_jobs_with_pagination_service(db: Session, offset: int, limit: int):
     try:
-        jobs = db.query(Job).offset(offset).limit(limit).all()
+        jobs = db.query(Job).filter(Job.ended == False).offset(offset).limit(limit).all()
         return jobs
     except Exception as e:
         handle_exception(e, "An error occurred while fetching jobs with pagination")

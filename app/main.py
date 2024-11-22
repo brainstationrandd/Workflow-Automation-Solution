@@ -35,6 +35,7 @@ from app.endpoints import notification_controller
 from app.endpoints import email_controller
 from app.endpoints import cv_applications_controller
 from app.endpoints import interview_progress_controller
+from app.endpoints import user_email_template_controller
 sessions = {}
 
 origins = ["*"]
@@ -62,6 +63,7 @@ app.include_router(notification_controller.router, prefix="/api/notifications", 
 app.include_router(email_controller.router, prefix="/api/email", tags=["Email"])
 app.include_router(cv_applications_controller.router, prefix="/api/cv_applications", tags=["CVApplications"])
 app.include_router(interview_progress_controller.router, prefix="/api/interview_progress", tags=["InterviewProgress"])
+app.include_router(user_email_template_controller.router, prefix="/api/user_email_templates", tags=["UserEmailTemplates"])
 
 app.add_exception_handler(HTTPException, http_error_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
